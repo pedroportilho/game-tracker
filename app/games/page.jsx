@@ -194,6 +194,7 @@ export default function GamesPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-[11px] text-zinc-600 uppercase tracking-widest border-b border-white/6 bg-white/2">
+                      <th className="px-4 py-3 w-8" />
                       <th className="text-left px-4 py-3 font-semibold">Game</th>
                       <th className="text-left px-4 py-3 font-semibold">Platform</th>
                       <th className="text-left px-4 py-3 font-semibold">Finished</th>
@@ -208,11 +209,11 @@ export default function GamesPage() {
                       const date = g.date || null
                       return (
                         <tr key={g.id} className="border-b border-white/4 hover:bg-white/2 transition-colors group">
+                          <td className="px-4 py-3 text-center w-8">
+                            {g.platinum && <span className="text-sm">🏆</span>}
+                          </td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              {g.platinum && <span className="text-sm flex-shrink-0">🏆</span>}
-                              <p className="text-zinc-200 font-medium leading-tight">{g.title}</p>
-                            </div>
+                            <p className="text-zinc-200 font-medium leading-tight">{g.title}</p>
                           </td>
                           <td className="px-4 py-3 text-zinc-500">{g.platform}</td>
                           <td className="px-4 py-3 text-zinc-500 tabular-nums">{date ?? <span className="text-zinc-700">—</span>}</td>
@@ -220,11 +221,11 @@ export default function GamesPage() {
                           <td className="px-4 py-3 w-40"><CompletionBar value={g.completion} /></td>
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap gap-1">
-                              {g.genres.slice(0, 3).map((genre) => (
+                              {g.genres.slice(0, 2).map((genre) => (
                                 <span key={genre} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700/30">{genre}</span>
                               ))}
-                              {g.genres.length > 3 && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-600">+{g.genres.length - 3}</span>
+                              {g.genres.length > 2 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-600">+{g.genres.length - 2}</span>
                               )}
                             </div>
                           </td>
@@ -242,7 +243,7 @@ export default function GamesPage() {
                       )
                     })}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={6} className="px-4 py-16 text-center text-zinc-600">No games found</td></tr>
+                      <tr><td colSpan={8} className="px-4 py-16 text-center text-zinc-600">No games found</td></tr>
                     )}
                   </tbody>
                 </table>

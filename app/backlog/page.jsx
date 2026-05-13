@@ -1,17 +1,14 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { CompletionBar } from '@/components/ui'
 import { getGames } from '@/lib/sheets'
-import { PLATFORMS } from '@/lib/constants'
 
 export default async function BacklogPage() {
   const games = await getGames()
 
-  // Recovery backlog = Lost Account games
   const backlog = games
     .filter((g) => g.accountStatus === 'Lost Account')
     .sort((a, b) => a.title.localeCompare(b.title))
 
-  // Group by platform
   const byPlatform = {}
   for (const g of backlog) {
     if (!byPlatform[g.platform]) byPlatform[g.platform] = []
@@ -66,11 +63,11 @@ export default async function BacklogPage() {
                     <tbody>
                       {platformGames.map((g) => (
                         <tr key={g.id} className="border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors">
+                          <td className="px-5 py-3 w-8 text-center">
+                            {g.platinum && <span className="text-sm">🏆</span>}
+                          </td>
                           <td className="px-5 py-3">
-                            <div className="flex items-center gap-2">
-                              {g.platinum && <span className="text-sm">🏆</span>}
-                              <span className="text-zinc-200">{g.title}</span>
-                            </div>
+                            <span className="text-zinc-200">{g.title}</span>
                           </td>
                           <td className="px-5 py-3 w-48">
                             <CompletionBar value={g.completion} />

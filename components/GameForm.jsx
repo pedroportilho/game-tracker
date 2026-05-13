@@ -9,6 +9,22 @@ const EMPTY = {
   completion: '', accountStatus: 'Preserved', genres: [], notes: '',
 }
 
+// Converte "May 2024" → "2024-05-01" para popular o <input type="date">
+function displayDateToInputValue(dateStr) {
+  if (!dateStr) return ''
+  // Se já está em YYYY-MM-DD, retorna direto
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+  // Se está em DD/MM/YYYY, converte para YYYY-MM-DD
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+    const [d, m, y] = dateStr.split('/')
+    return `${y}-${m}-${d}`
+  }
+  // Tenta parsear "Mon YYYY" (ex: "May 2024") — legado
+  const d = new Date(`${dateStr} 01`)
+  if (!isNaN(d)) return d.toISOString().slice(0, 10)
+  return ''
+}
+
 function validate(form) {
   const e = {}
   if (!form.title.trim()) e.title = 'Required'
@@ -25,6 +41,7 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }) {
     initialData
       ? {
           ...initialData,
+          date: displayDateToInputValue(initialData.date),
           completion: initialData.completion != null ? Math.round(initialData.completion * 100) : '',
           genres: Array.isArray(initialData.genres) ? initialData.genres : [],
         }
@@ -60,8 +77,7 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }) {
           <option value="">Select…</option>
           {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
         </Select>
-        <Input label="Year" type="number" value={form.date} onChange={(e) => set('date', e.target.value)}
-          placeholder="e.g. 2024" min="1970" max="2030" />
+        <Input label="Date" type="date" value={form.date} onChange={(e) => set('date', e.target.value)} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
