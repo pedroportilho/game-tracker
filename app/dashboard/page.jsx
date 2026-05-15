@@ -1,6 +1,7 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { StatCard } from '@/components/ui'
 import { getGames } from '@/lib/sheets'
+import { formatGameDate } from '@/lib/constants'
 
 
 async function getDashboardData() {
@@ -194,7 +195,7 @@ export default async function DashboardPage() {
             <h2 className="font-display font-bold text-sm text-zinc-300 mb-4 uppercase tracking-wide">Recent Activity</h2>
             <div className="flex flex-col gap-2">
               {d.recent.map((g) => {
-                const date = g.date || null
+                const date = formatGameDate(g.date)
                 return (
                   <div key={g.id} className="flex items-center gap-4 py-2 border-b border-white/4 last:border-0">
                     <div className="flex-1 min-w-0">

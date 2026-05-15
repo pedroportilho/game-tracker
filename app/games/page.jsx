@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { StatusBadge, CompletionBar, Button, Modal, Select, Input } from '@/components/ui'
 import { GameForm } from '@/components/GameForm'
-import { PLATFORMS, ACCOUNT_STATUSES } from '@/lib/constants'
-import { Pencil, Trash2, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { PLATFORMS, ACCOUNT_STATUSES, formatGameDate } from '@/lib/constants'
+import { Pencil, Trash2, Plus, Search, SlidersHorizontal, Sparkles } from 'lucide-react'
 
 export default function GamesPage() {
   const [games, setGames] = useState([])
@@ -17,6 +18,8 @@ export default function GamesPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [editGame, setEditGame] = useState(null)
   const [deleteGame, setDeleteGame] = useState(null)
+  const [matching, setMatching] = useState(false)
+  const [matchResult, setMatchResult] = useState(null)
 
   // Filters
   const [search, setSearch] = useState('')
@@ -80,6 +83,23 @@ export default function GamesPage() {
     }
   }
 
+  async function handleMatchAll() {
+    if (!confirm('This will search IGDB for every game without a link and may take a minute. Continue?')) return
+    setMatching(true)
+    setMatchResult(null)
+    try {
+      const res = await fetch('/api/igdb/match-all', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Match failed')
+      setMatchResult(data)
+      await fetchGames()
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setMatching(false)
+    }
+  }
+
   async function handleDelete() {
     setSaving(true)
     try {
@@ -127,10 +147,25 @@ export default function GamesPage() {
               <h1 className="font-display font-bold text-3xl text-zinc-100 mb-1">Games</h1>
               <p className="text-zinc-600 text-sm">{filtered.length} of {games.length} games</p>
             </div>
-            <Button variant="primary" onClick={() => setAddOpen(true)}>
-              <Plus className="w-4 h-4" /> Add game
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="default" onClick={handleMatchAll} disabled={matching}>
+                <Sparkles className="w-4 h-4" />
+                {matching ? 'Matching…' : 'Match IGDB'}
+              </Button>
+              <Button variant="primary" onClick={() => setAddOpen(true)}>
+                <Plus className="w-4 h-4" /> Add game
+              </Button>
+            </div>
           </div>
+
+          {matchResult && (
+            <div className="mb-4 px-4 py-3 rounded-xl bg-violet-950/20 border border-violet-700/20 text-sm text-violet-200 flex items-center justify-between">
+              <span>
+                Matched <b>{matchResult.matched}</b> of {matchResult.total} · skipped {matchResult.skipped} · failed {matchResult.failed}
+              </span>
+              <button onClick={() => setMatchResult(null)} className="text-violet-400 hover:text-violet-200 text-xs">Dismiss</button>
+            </div>
+          )}
 
           {/* Search & Filters */}
           <div className="flex flex-col gap-3 mb-6">
@@ -200,35 +235,26 @@ export default function GamesPage() {
                       <th className="text-left px-4 py-3 font-semibold">Finished</th>
                       <th className="text-left px-4 py-3 font-semibold">Status</th>
                       <th className="text-left px-4 py-3 font-semibold w-40">Completion</th>
-                      <th className="text-left px-4 py-3 font-semibold">Genres</th>
                       <th className="px-4 py-3 w-20" />
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((g) => {
-                      const date = g.date || null
+                      const date = formatGameDate(g.date)
                       return (
                         <tr key={g.id} className="border-b border-white/4 hover:bg-white/2 transition-colors group">
                           <td className="px-4 py-3 text-center w-8">
                             {g.platinum && <span className="text-sm">🏆</span>}
                           </td>
                           <td className="px-4 py-3">
-                            <p className="text-zinc-200 font-medium leading-tight">{g.title}</p>
+                            <Link href={`/games/${g.id}`} className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors">
+                              {g.title}
+                            </Link>
                           </td>
                           <td className="px-4 py-3 text-zinc-500">{g.platform}</td>
                           <td className="px-4 py-3 text-zinc-500 tabular-nums">{date ?? <span className="text-zinc-700">—</span>}</td>
                           <td className="px-4 py-3"><StatusBadge status={g.accountStatus} /></td>
-                          <td className="px-4 py-3 w-40"><CompletionBar value={g.completion} /></td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-1">
-                              {g.genres.slice(0, 2).map((genre) => (
-                                <span key={genre} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700/30">{genre}</span>
-                              ))}
-                              {g.genres.length > 2 && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-600">+{g.genres.length - 2}</span>
-                              )}
-                            </div>
-                          </td>
+                          <td className="px-4 py-3 w-40"><CompletionBar value={g.completion} /></td>                       
                           <td className="px-4 py-3">
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                               <Button variant="ghost" size="icon" onClick={() => setEditGame(g)}>
