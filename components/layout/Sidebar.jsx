@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 
 const NAV = [
   {
@@ -61,16 +62,16 @@ export function Sidebar() {
   return (
     <aside className="w-56 min-h-screen bg-[#0a0c12] border-r border-white/5 flex flex-col p-5 shrink-0 sticky top-0 h-screen">
       {/* Logo */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2.5 mb-1">
-          <div className="w-7 h-7 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-sm">
-            🎮
-          </div>
-          <span className="font-display font-bold text-base text-zinc-100 tracking-tight">
-            Game Tracker
-          </span>
+      <div className="mb-8 flex justify-center">
+        <div className="relative w-[80%] aspect-square">
+          <Image
+            src="/images/game-folder.png"
+            alt="Logo"
+            fill
+            priority
+            className="object-contain"
+          />
         </div>
-        <p className="text-[11px] text-zinc-600 pl-9">Personal collection</p>
       </div>
 
       {/* Nav */}
