@@ -14,7 +14,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata = {
-  title: 'Game Tracker',
+  title: 'The Save File',
   description: 'Personal game collection tracker',
 }
 
