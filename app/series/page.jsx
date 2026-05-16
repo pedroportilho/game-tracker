@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { MobileHeader } from '@/components/layout/Sidebar'
 import { Button, Modal, Input } from '@/components/ui'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 
-// ─── CircularProgress ─────────────────────────────────────────────────────────
 function CircularProgress({ value }) {
   const r = 18
   const circ = 2 * Math.PI * r
@@ -29,7 +29,6 @@ function CircularProgress({ value }) {
   )
 }
 
-// ─── SeriesCard ───────────────────────────────────────────────────────────────
 function SeriesCard({ series, onToggle, onAddEntry, saving }) {
   const [open, setOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -51,10 +50,9 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
 
   return (
     <div className="bg-[#0f1117] border border-white/6 rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="px-5 py-4 flex items-center gap-4">
+      <div className="px-4 md:px-5 py-4 flex items-center gap-4">
         <div className="flex-1 min-w-0">
-          <h2 className="font-display font-bold text-zinc-100 text-lg leading-tight truncate">
+          <h2 className="font-display font-bold text-zinc-100 text-base md:text-lg leading-tight truncate">
             {series.name}
           </h2>
           <p className="text-zinc-600 text-xs mt-0.5">{done} / {total} completed</p>
@@ -68,8 +66,7 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
         </button>
       </div>
 
-      {/* Progress bar */}
-      <div className="mx-5 h-1 bg-white/4 rounded-full overflow-hidden mb-4">
+      <div className="mx-4 md:mx-5 h-1 bg-white/4 rounded-full overflow-hidden mb-4">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{
@@ -81,15 +78,11 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
         />
       </div>
 
-      {/* Expandable list */}
       {open && (
         <div className="border-t border-white/6">
           <ul className="divide-y divide-white/4">
             {series.entries.map((entry, i) => (
-              <li
-                key={i}
-                className="flex items-center gap-3 px-5 py-2.5 hover:bg-white/2 transition-colors"
-              >
+              <li key={i} className="flex items-center gap-3 px-4 md:px-5 py-2.5 hover:bg-white/2 transition-colors">
                 <button
                   onClick={() => onToggle(entry)}
                   disabled={saving}
@@ -114,8 +107,7 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
             ))}
           </ul>
 
-          {/* Add game to series */}
-          <div className="px-5 py-3 border-t border-white/4">
+          <div className="px-4 md:px-5 py-3 border-t border-white/4">
             {addOpen ? (
               <div className="flex gap-2">
                 <Input
@@ -151,7 +143,6 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SeriesPage() {
   const [seriesList, setSeriesList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -177,7 +168,6 @@ export default function SeriesPage() {
   }
 
   async function handleToggle(entry) {
-    // Optimistic update
     setSeriesList((prev) =>
       prev.map((s) => ({
         ...s,
@@ -196,7 +186,7 @@ export default function SeriesPage() {
         body: JSON.stringify({ rowIndex: entry.rowIndex, colIndex: entry.colIndex, completed: !entry.completed }),
       })
     } catch {
-      fetchSeries() // revert on error
+      fetchSeries()
     } finally {
       setSaving(false)
     }
@@ -236,49 +226,54 @@ export default function SeriesPage() {
   return (
     <div className="flex min-h-screen bg-[#080a0f]">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-8">
-        <div className="max-w-4xl mx-auto">
 
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="font-display font-bold text-3xl text-zinc-100 mb-1">Series</h1>
-              {!loading && !error && (
-                <p className="text-zinc-600 text-sm">
-                  {totalDone} of {totalGames} games completed across {seriesList.length} series
-                </p>
-              )}
+      <div className="flex-1 flex flex-col min-w-0">
+        <MobileHeader title="Series" />
+
+        <main className="flex-1 overflow-auto p-4 md:p-8">
+          <div className="max-w-4xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+              <div>
+                <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">Series</h1>
+                {!loading && !error && (
+                  <p className="text-zinc-600 text-sm">
+                    {totalDone} of {totalGames} games completed across {seriesList.length} series
+                  </p>
+                )}
+              </div>
+              <Button variant="primary" onClick={() => setAddSeriesOpen(true)}>
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">New series</span>
+              </Button>
             </div>
-            <Button variant="primary" onClick={() => setAddSeriesOpen(true)}>
-              <Plus className="w-4 h-4" /> New series
-            </Button>
+
+            {loading ? (
+              <div className="flex items-center justify-center h-64 text-zinc-600">Loading series…</div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center h-64 gap-3">
+                <p className="text-red-400 text-sm">{error}</p>
+                <Button variant="default" onClick={fetchSeries}>Retry</Button>
+              </div>
+            ) : (
+              // 1 coluna no mobile, 2 no sm+
+              <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
+                {seriesList.map((series, i) => (
+                  <SeriesCard
+                    key={`${series.colIndex}-${i}-${series.name}`}
+                    series={series}
+                    onToggle={handleToggle}
+                    onAddEntry={handleAddEntry}
+                    saving={saving}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+        </main>
+      </div>
 
-          {/* Content */}
-          {loading ? (
-            <div className="flex items-center justify-center h-64 text-zinc-600">Loading series…</div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-3">
-              <p className="text-red-400 text-sm">{error}</p>
-              <Button variant="default" onClick={fetchSeries}>Retry</Button>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {seriesList.map((series, i) => (
-                <SeriesCard
-                  key={`${series.colIndex}-${i}-${series.name}`}
-                  series={series}
-                  onToggle={handleToggle}
-                  onAddEntry={handleAddEntry}
-                  saving={saving}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Add Series Modal */}
       <Modal isOpen={addSeriesOpen} onClose={() => setAddSeriesOpen(false)} title="New series">
         <div className="flex flex-col gap-5">
           <Input
