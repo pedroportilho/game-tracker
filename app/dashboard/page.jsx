@@ -1,8 +1,9 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { StatCard } from '@/components/ui'
-import { getGames } from '@/lib/sheets'
+import { getGames } from '@/lib/supabase'
 import { formatGameDate } from '@/lib/constants'
+import { StatusBadge } from '@/components/ui'
 
 async function getDashboardData() {
   const games = await getGames()
@@ -14,9 +15,9 @@ async function getDashboardData() {
     : 0
   const platCount = games.filter((g) => g.platinum).length
   const platRate = total ? platCount / total : 0
-  const lostCount = games.filter((g) => g.accountStatus === 'Lost Account').length
-  const preservedCount = games.filter((g) => g.accountStatus === 'Preserved').length
-  const reEarnedCount = games.filter((g) => g.accountStatus === 'Re-earned').length
+  const lostCount = games.filter((g) => g.account_status === 'Lost Account').length
+  const preservedCount = games.filter((g) => g.account_status === 'Preserved').length
+  const reEarnedCount = games.filter((g) => g.account_status === 'Re-earned').length
   const completed = games.filter((g) => g.completion === 1).length
 
   const buckets = { '0–25%': 0, '26–50%': 0, '51–75%': 0, '76–99%': 0, '100%': 0, 'No data': 0 }
@@ -198,11 +199,7 @@ export default async function DashboardPage() {
                         <p className="text-xs text-zinc-600">{g.platform} · {date ?? '—'}</p>
                       </div>
                       {g.platinum && <span className="text-sm shrink-0">🏆</span>}
-                      <span className={`text-xs px-2 py-0.5 rounded-md border shrink-0 ${
-                        g.accountStatus === 'Preserved' ? 'bg-emerald-900/30 text-emerald-400 border-emerald-700/20' :
-                        g.accountStatus === 'Lost Account' ? 'bg-red-900/30 text-red-400 border-red-700/20' :
-                        'bg-zinc-800 text-zinc-500 border-zinc-700/20'
-                      }`}>{g.accountStatus}</span>
+                      <span className="px-4 py-3"><StatusBadge status={g.account_status} /></span>
                     </div>
                   )
                 })}

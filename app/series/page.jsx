@@ -42,7 +42,8 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
   async function handleAddEntry() {
     if (!newTitle.trim()) return
     setAdding(true)
-    await onAddEntry(series.colIndex, newTitle.trim())
+    // Passa series.id (número) em vez de colIndex
+    await onAddEntry(series.id, newTitle.trim())
     setNewTitle('')
     setAddOpen(false)
     setAdding(false)
@@ -81,8 +82,9 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
       {open && (
         <div className="border-t border-white/6">
           <ul className="divide-y divide-white/4">
-            {series.entries.map((entry, i) => (
-              <li key={i} className="flex items-center gap-3 px-4 md:px-5 py-2.5 hover:bg-white/2 transition-colors">
+            {series.entries.map((entry) => (
+              // Usa entry.id como key (único e estável)
+              <li key={entry.id} className="flex items-center gap-3 px-4 md:px-5 py-2.5 hover:bg-white/2 transition-colors">
                 <button
                   onClick={() => onToggle(entry)}
                   disabled={saving}
@@ -168,13 +170,12 @@ export default function SeriesPage() {
   }
 
   async function handleToggle(entry) {
+    // Optimistic update usando entry.id
     setSeriesList((prev) =>
       prev.map((s) => ({
         ...s,
         entries: s.entries.map((e) =>
-          e.rowIndex === entry.rowIndex && e.colIndex === entry.colIndex
-            ? { ...e, completed: !e.completed }
-            : e
+          e.id === entry.id ? { ...e, completed: !e.completed } : e
         ),
       }))
     )
@@ -183,7 +184,8 @@ export default function SeriesPage() {
       await fetch('/api/series/entry', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rowIndex: entry.rowIndex, colIndex: entry.colIndex, completed: !entry.completed }),
+        // Envia entry.id em vez de rowIndex/colIndex
+        body: JSON.stringify({ id: entry.id, completed: !entry.completed }),
       })
     } catch {
       fetchSeries()
@@ -192,11 +194,12 @@ export default function SeriesPage() {
     }
   }
 
-  async function handleAddEntry(colIndex, title) {
+  async function handleAddEntry(seriesId, title) {
     await fetch('/api/series/entry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add', colIndex, title }),
+      // Envia seriesId (número) em vez de colIndex
+      body: JSON.stringify({ seriesId, title }),
     })
     fetchSeries()
   }
@@ -233,7 +236,6 @@ export default function SeriesPage() {
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-4xl mx-auto">
 
-            {/* Header */}
             <div className="flex items-center justify-between mb-6 md:mb-8">
               <div>
                 <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">Series</h1>
@@ -257,11 +259,11 @@ export default function SeriesPage() {
                 <Button variant="default" onClick={fetchSeries}>Retry</Button>
               </div>
             ) : (
-              // 1 coluna no mobile, 2 no sm+
               <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
-                {seriesList.map((series, i) => (
+                {seriesList.map((series) => (
+                  // Usa series.id como key (estável, único)
                   <SeriesCard
-                    key={`${series.colIndex}-${i}-${series.name}`}
+                    key={series.id}
                     series={series}
                     onToggle={handleToggle}
                     onAddEntry={handleAddEntry}

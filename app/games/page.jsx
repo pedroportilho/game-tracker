@@ -8,6 +8,8 @@ import { StatusBadge, CompletionBar, Button, Modal, Select } from '@/components/
 import { GameForm } from '@/components/GameForm'
 import { PLATFORMS, ACCOUNT_STATUSES, formatGameDate } from '@/lib/constants'
 import { Pencil, Trash2, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { AuthModal } from '@/components/AuthModal'
+import { useAuth } from '@/lib/useAuth'
 
 export default function GamesPage() {
   const [games, setGames] = useState([])
@@ -25,6 +27,8 @@ export default function GamesPage() {
   const [filterPlatinum, setFilterPlatinum] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState('title')
+
+  const { authOpen, setAuthOpen, requireAuth, submitPassword } = useAuth()
 
   useEffect(() => { fetchGames() }, [])
 
@@ -132,7 +136,7 @@ export default function GamesPage() {
                 <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">Games</h1>
                 <p className="text-zinc-600 text-sm">{filtered.length} of {games.length} games</p>
               </div>
-              <Button variant="primary" onClick={() => setAddOpen(true)}>
+              <Button variant="primary" onClick={() => requireAuth(() => setAddOpen(true))}>
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add game</span>
               </Button>
@@ -226,14 +230,14 @@ export default function GamesPage() {
                               </td>
                               <td className="px-4 py-3 text-zinc-500">{g.platform}</td>
                               <td className="px-4 py-3 text-zinc-500 tabular-nums">{date ?? <span className="text-zinc-700">—</span>}</td>
-                              <td className="px-4 py-3"><StatusBadge status={g.accountStatus} /></td>
+                              <td className="px-4 py-3"><StatusBadge status={g.account_status} /></td>
                               <td className="px-4 py-3 w-40"><CompletionBar value={g.completion} /></td>
                               <td className="px-4 py-3">
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                                  <Button variant="ghost" size="icon" onClick={() => setEditGame(g)}>
+                                  <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setEditGame(g))}>
                                     <Pencil className="w-3.5 h-3.5" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => setDeleteGame(g)}>
+                                  <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setDeleteGame(g))}>
                                     <Trash2 className="w-3.5 h-3.5 text-red-500" />
                                   </Button>
                                 </div>
@@ -318,6 +322,11 @@ export default function GamesPage() {
           </div>
         )}
       </Modal>
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onSubmit={submitPassword}
+      />  
     </div>
   )
 }

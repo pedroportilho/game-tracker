@@ -7,8 +7,8 @@ import { Search, X } from 'lucide-react'
 
 const EMPTY = {
   title: '', platform: '', date: '', platinum: false,
-  completion: '', accountStatus: 'Preserved', genres: [], notes: '',
-  igdbId: null,
+  completion: '', account_status: 'Preserved', genres: [], notes: '',
+  igdb_id: null,
 }
 
 // Converte "May 2024" → "2024-05-01" para popular o <input type="date">
@@ -28,14 +28,13 @@ function validate(form) {
   const e = {}
   if (!form.title.trim()) e.title = 'Required'
   if (!form.platform) e.platform = 'Required'
-  if (!form.accountStatus) e.accountStatus = 'Required'
+  if (!form.account_status) e.account_status = 'Required'
   if (form.genres.length === 0) e.genres = 'Select at least one'
   if (form.completion !== '' && (isNaN(form.completion) || form.completion < 0 || form.completion > 100))
     e.completion = '0–100'
   return e
 }
 
-// Map IGDB genre names → app GENRES list
 function mapIgdbGenres(igdbGenres) {
   const set = new Set(GENRES.map((g) => g.toLowerCase()))
   const out = []
@@ -112,32 +111,32 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }) {
         const shouldShow = results.length > 0 || loading || isId || q.length >= 2
         if (!shouldShow) return null
         return (
-        <div className="absolute z-20 left-0 right-0 mt-1 bg-[#0f1117] border border-white/8 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
-          {loading && <div className="px-3 py-2 text-xs text-zinc-600">Searching…</div>}
-          {!loading && results.length === 0 && (q.length >= 2 || isId) && (
-            <div className="px-3 py-2 text-xs text-zinc-600">{isId ? `No game with IGDB ID ${q}` : 'No results'}</div>
-          )}
-          {results.map((r) => (
-            <button
-              type="button"
-              key={r.id}
-              onClick={() => { onPick(r); setQuery(''); setResults([]); setOpen(false) }}
-              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 text-left transition-colors"
-            >
-              {r.cover ? (
-                <img src={r.cover} alt="" className="w-8 h-10 object-cover rounded" />
-              ) : (
-                <div className="w-8 h-10 bg-zinc-800 rounded" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-zinc-200 truncate">{r.name}</p>
-                <p className="text-[11px] text-zinc-600">
-                  {r.year ?? '—'}{r.platforms.length > 0 && ` · ${r.platforms.slice(0, 3).join(', ')}`}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
+          <div className="absolute z-20 left-0 right-0 mt-1 bg-[#0f1117] border border-white/8 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
+            {loading && <div className="px-3 py-2 text-xs text-zinc-600">Searching…</div>}
+            {!loading && results.length === 0 && (q.length >= 2 || isId) && (
+              <div className="px-3 py-2 text-xs text-zinc-600">{isId ? `No game with IGDB ID ${q}` : 'No results'}</div>
+            )}
+            {results.map((r) => (
+              <button
+                type="button"
+                key={r.id}
+                onClick={() => { onPick(r); setQuery(''); setResults([]); setOpen(false) }}
+                className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 text-left transition-colors"
+              >
+                {r.cover ? (
+                  <img src={r.cover} alt="" className="w-8 h-10 object-cover rounded" />
+                ) : (
+                  <div className="w-8 h-10 bg-zinc-800 rounded" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-zinc-200 truncate">{r.name}</p>
+                  <p className="text-[11px] text-zinc-600">
+                    {r.year ?? '—'}{r.platforms.length > 0 && ` · ${r.platforms.slice(0, 3).join(', ')}`}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
         )
       })()}
     </div>
@@ -145,17 +144,21 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }) {
 }
 
 export function GameForm({ initialData, onSubmit, onCancel, loading }) {
-  const [form, setForm] = useState(() =>
-    initialData
-      ? {
-          ...initialData,
-          date: displayDateToInputValue(initialData.date),
-          completion: initialData.completion != null ? Math.round(initialData.completion * 100) : '',
-          genres: Array.isArray(initialData.genres) ? initialData.genres : [],
-          igdbId: initialData.igdbId ?? null,
-        }
-      : EMPTY
-  )
+  const [form, setForm] = useState(() => {
+    if (!initialData) return EMPTY
+    return {
+      title:          initialData.title ?? '',
+      platform:       initialData.platform ?? '',
+      date:           displayDateToInputValue(initialData.date),
+      platinum:       initialData.platinum ?? false,
+      // Supabase guarda 0.00–1.00 → exibe 0–100 no input
+      completion:     initialData.completion != null ? Math.round(initialData.completion * 100) : '',
+      account_status: initialData.account_status ?? 'Preserved',
+      genres:         Array.isArray(initialData.genres) ? initialData.genres : [],
+      notes:          initialData.notes ?? '',
+      igdb_id:        initialData.igdb_id ?? null,
+    }
+  })
   const [errors, setErrors] = useState({})
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
@@ -167,22 +170,20 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }) {
     }))
 
   async function handlePickIgdb(result) {
-    // Fetch full details only for genre mapping. NEVER touch `date` — it's the
-    // user's completion date, not the game's release date.
     try {
       const res = await fetch(`/api/igdb/games/${result.id}`)
       const data = res.ok ? await res.json() : null
       setForm((f) => ({
         ...f,
-        igdbId: String(result.id),
-        title: data?.name ?? result.name ?? f.title,
-        genres: data?.genres ? mapIgdbGenres(data.genres) : f.genres,
+        igdb_id: result.id,           // número, não string
+        title:   data?.name ?? result.name ?? f.title,
+        genres:  data?.genres ? mapIgdbGenres(data.genres) : f.genres,
       }))
     } catch {
       setForm((f) => ({
         ...f,
-        igdbId: String(result.id),
-        title: result.name ?? f.title,
+        igdb_id: result.id,
+        title:   result.name ?? f.title,
       }))
     }
   }
@@ -191,9 +192,19 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }) {
     e.preventDefault()
     const errs = validate(form)
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
+
     onSubmit({
-      ...form,
-      completion: form.completion !== '' ? Number(form.completion) / 100 : null,
+      title:          form.title.trim(),
+      platform:       form.platform,
+      // "" → null para o Supabase aceitar como date nullable
+      date:           form.date || null,
+      platinum:       form.platinum,
+      // Input 0–100 → banco 0.00–1.00
+      completion:     form.completion !== '' ? Number(form.completion) / 100 : null,
+      account_status: form.account_status,
+      genres:         form.genres,
+      notes:          form.notes.trim() || null,
+      igdb_id:        form.igdb_id ?? null,
     })
   }
 
@@ -201,8 +212,8 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <IgdbSearch
         onPick={handlePickIgdb}
-        currentIgdbId={form.igdbId}
-        onClear={() => set('igdbId', null)}
+        currentIgdbId={form.igdb_id}
+        onClear={() => set('igdb_id', null)}
       />
 
       <Input label="Title" value={form.title} onChange={(e) => set('title', e.target.value)}
@@ -217,7 +228,7 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Select label="Account Status" value={form.accountStatus} onChange={(e) => set('accountStatus', e.target.value)} error={errors.accountStatus}>
+        <Select label="Account Status" value={form.account_status} onChange={(e) => set('account_status', e.target.value)} error={errors.account_status}>
           {ACCOUNT_STATUSES.map((s) => <option key={s}>{s}</option>)}
         </Select>
         <Input label="Completion %" type="number" value={form.completion}

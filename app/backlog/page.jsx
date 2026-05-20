@@ -1,14 +1,18 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { CompletionBar } from '@/components/ui'
-import { getGames } from '@/lib/sheets'
+import { getBacklog, getGames } from '@/lib/supabase'
+import Link from 'next/link'
 
 export default async function BacklogPage() {
-  const games = await getGames()
+  //const games = await getGames()
 
-  const backlog = games
-    .filter((g) => g.accountStatus === 'Lost Account')
-    .sort((a, b) => a.title.localeCompare(b.title))
+  //const backlog = games
+  //  .filter((g) => g.accountStatus === 'Lost Account')
+  //  .sort((a, b) => a.title.localeCompare(b.title))
+
+  const games = await getBacklog()
+  const backlog = games.sort((a, b) => a.title.localeCompare(b.title))
 
   const byPlatform = {}
   for (const g of backlog) {
@@ -17,6 +21,8 @@ export default async function BacklogPage() {
   }
 
   const platinumCount = backlog.filter((g) => g.platinum).length
+
+  console.log(backlog)
 
   return (
     <div className="flex min-h-screen bg-[#080a0f]">
@@ -75,7 +81,9 @@ export default async function BacklogPage() {
                               {g.platinum && <span className="text-sm">🏆</span>}
                             </td>
                             <td className="px-5 py-3">
-                              <span className="text-zinc-200">{g.title}</span>
+                              <Link href={`/games/${g.id}`} className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors">
+                                  {g.title}
+                              </Link>
                             </td>
                             <td className="px-5 py-3 w-48">
                               <CompletionBar value={g.completion} />

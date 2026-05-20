@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { StatusBadge, CompletionBar } from '@/components/ui'
-import { getGameById } from '@/lib/sheets'
+import { getGameById } from '@/lib/supabase'
 import { getGame, igdbImageUrl } from '@/lib/igdb'
 import { formatGameDate } from '@/lib/constants'
 import { ArrowLeft, ExternalLink, Calendar, Trophy } from 'lucide-react'
+import { GameEditButton } from '@/components/GameEditButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ export default async function GameDetailPage({ params }) {
   const game = await getGameById(id)
   if (!game) notFound()
 
-  const igdb = await fetchIgdb(game.igdbId)
+  const igdb = await fetchIgdb(game.igdb_id)
   const cover = igdbImageUrl(igdb?.cover?.url, 'cover_big')
   const summary = igdb?.summary
   const igdbGenres = (igdb?.genres ?? []).map((g) => g.name)
@@ -48,12 +49,15 @@ export default async function GameDetailPage({ params }) {
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
 
-            <Link
-              href="/games"
-              className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-200 transition-colors mb-6"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back to games
-            </Link>
+            <div className="flex items-center justify-between mb-6">
+              <Link
+                href="/games"
+                className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-200 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back to games
+              </Link>
+              <GameEditButton game={game} />
+            </div>
 
             {/* Hero: capa + info — coluna no mobile, lado-a-lado no md+ */}
             <div className="flex flex-col md:grid md:grid-cols-[200px_1fr] gap-5 md:gap-8 mb-6 md:mb-8">
@@ -67,7 +71,7 @@ export default async function GameDetailPage({ params }) {
                   />
                 ) : (
                   <div className="w-36 md:w-full aspect-[3/4] rounded-xl bg-[#0f1117] border border-white/8 flex items-center justify-center text-zinc-700 text-xs text-center px-3">
-                    {game.igdbId ? 'No cover available' : 'Not linked to IGDB'}
+                    {game.igdb_id ? 'No cover available' : 'Not linked to IGDB'}
                   </div>
                 )}
               </div>
@@ -84,7 +88,7 @@ export default async function GameDetailPage({ params }) {
                     <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700/40 text-xs">
                       {game.platform}
                     </span>
-                    <StatusBadge status={game.accountStatus} />
+                    <StatusBadge status={game.account_status} />
                     {game.date && (
                       <span className="inline-flex items-center gap-1 text-zinc-500 text-xs">
                         <Calendar className="w-3 h-3" /> {formatGameDate(game.date)}
