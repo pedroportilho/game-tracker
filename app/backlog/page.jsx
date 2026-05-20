@@ -22,7 +22,6 @@ export default async function BacklogPage() {
 
   const platinumCount = backlog.filter((g) => g.platinum).length
 
-  console.log(backlog)
 
   return (
     <div className="flex min-h-screen bg-[#080a0f]">
