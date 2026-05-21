@@ -39,6 +39,7 @@ async function getDashboardData() {
       if (g.platinum) genreMap[genre].platinum++
     }
   }
+
   const genreStats = Object.entries(genreMap)
     .map(([genre, s]) => ({ genre, ...s, rate: s.finished ? s.platinum / s.finished : 0 }))
     .sort((a, b) => b.finished - a.finished)
@@ -47,6 +48,7 @@ async function getDashboardData() {
   for (const g of games) {
     platformMap[g.platform] = (platformMap[g.platform] ?? 0) + 1
   }
+  
   const platformStats = Object.entries(platformMap)
     .map(([platform, count]) => ({ platform, count }))
     .sort((a, b) => b.count - a.count)

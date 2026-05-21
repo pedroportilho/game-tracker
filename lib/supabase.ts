@@ -101,39 +101,49 @@ export async function getSeries(): Promise<Series[]> {
     .from('series')
     .select('*, series_entries(*)')
     .order('name')
-    .order('position', { referencedTable: 'series_entries' })
+
   if (error) throw new Error(error.message)
+
   return (data as any[]).map((s) => ({
     id:      s.id,
     name:    s.name,
-    entries: s.series_entries ?? [],
+    entries: (s.series_entries ?? []).sort((a: any, b: any) => a.position - b.position),
   }))
 }
 
+// Adiciona uma nova série
 export async function createSeries(name: string): Promise<Series> {
   const { data, error } = await supabase
     .from('series')
     .insert({ name })
     .select()
     .single()
+
   if (error) throw new Error(error.message)
-  return { ...(data as any), entries: [] }
+
+  return {
+    id:      data.id,
+    name:    data.name,
+    entries: [],
+  }
 }
 
 export async function addSeriesEntry(seriesId: number, title: string): Promise<SeriesEntry> {
-  // Pega a próxima posição
-  const { count } = await supabase
-    .from('series_entries')
-    .select('*', { count: 'exact', head: true })
-    .eq('series_id', seriesId)
-
   const { data, error } = await supabase
     .from('series_entries')
-    .insert({ series_id: seriesId, title, position: count ?? 0 })
+    .insert({ series_id: seriesId, title, completed: false })
     .select()
     .single()
+
   if (error) throw new Error(error.message)
-  return data as SeriesEntry
+
+  return {
+    id:        data.id,
+    title:     data.title,
+    completed: data.completed,
+    series_id: data.series_id,
+    position: data.position,
+  }
 }
 
 export async function toggleSeriesEntry(id: number, completed: boolean): Promise<void> {
@@ -141,5 +151,18 @@ export async function toggleSeriesEntry(id: number, completed: boolean): Promise
     .from('series_entries')
     .update({ completed })
     .eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function updateEntriesOrder(entries: SeriesEntry[]): Promise<void> {
+  const updates = entries.map((entry, index) => ({
+    id:       entry.id,
+    position: index + 1,
+  }))
+
+  const { error } = await supabase
+    .from('series_entries')
+    .upsert(updates)
+
   if (error) throw new Error(error.message)
 }

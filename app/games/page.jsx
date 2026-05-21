@@ -110,9 +110,7 @@ export default function GamesPage() {
       if (sortBy === 'completion') return (b.completion ?? -1) - (a.completion ?? -1)
       if (sortBy === 'platform') return a.platform.localeCompare(b.platform)
       if (sortBy === 'date') {
-        const ya = typeof a.date === 'number' ? serialToYear(a.date) : parseInt(a.date) || 0
-        const yb = typeof b.date === 'number' ? serialToYear(b.date) : parseInt(b.date) || 0
-        return yb - ya
+        return new Date(b.date) - new Date(a.date)
       }
       return 0
     })

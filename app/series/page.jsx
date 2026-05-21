@@ -4,7 +4,21 @@ import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { Button, Modal, Input } from '@/components/ui'
-import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Plus, GripVertical } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 function CircularProgress({ value }) {
   const r = 18
@@ -29,20 +43,93 @@ function CircularProgress({ value }) {
   )
 }
 
-function SeriesCard({ series, onToggle, onAddEntry, saving }) {
+function SortableEntry({ entry, onToggle, saving }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: entry.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 'auto',
+  }
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 px-4 md:px-5 py-2.5 hover:bg-white/2 transition-colors bg-[#0f1117]"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="text-zinc-700 hover:text-zinc-400 transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+        tabIndex={-1}
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => onToggle(entry)}
+        disabled={saving}
+        className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
+          entry.completed
+            ? 'bg-violet-600 border-violet-600 text-white'
+            : 'border-zinc-700 hover:border-violet-500'
+        }`}
+      >
+        {entry.completed && (
+          <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="none">
+            <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+      <span className={`text-sm flex-1 transition-colors ${
+        entry.completed ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-200'
+      }`}>
+        {entry.title}
+      </span>
+    </li>
+  )
+}
+
+function SeriesCard({ series, onToggle, onAddEntry, onReorderEntries, saving }) {
   const [open, setOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
+  const [entries, setEntries] = useState(series.entries)
 
-  const total = series.entries.length
-  const done = series.entries.filter((e) => e.completed).length
+  useEffect(() => {
+    setEntries(series.entries)
+  }, [series.entries])
+
+  const total = entries.length
+  const done = entries.filter((e) => e.completed).length
   const pct = total === 0 ? 0 : Math.round((done / total) * 100)
+
+  const sensors = useSensors(useSensor(PointerSensor))
+
+  async function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = entries.findIndex((e) => e.id === active.id)
+    const newIndex = entries.findIndex((e) => e.id === over.id)
+    const newOrder = arrayMove(entries, oldIndex, newIndex)
+
+    setEntries(newOrder)
+    await onReorderEntries(newOrder)
+  }
 
   async function handleAddEntry() {
     if (!newTitle.trim()) return
     setAdding(true)
-    // Passa series.id (número) em vez de colIndex
     await onAddEntry(series.id, newTitle.trim())
     setNewTitle('')
     setAddOpen(false)
@@ -81,33 +168,20 @@ function SeriesCard({ series, onToggle, onAddEntry, saving }) {
 
       {open && (
         <div className="border-t border-white/6">
-          <ul className="divide-y divide-white/4">
-            {series.entries.map((entry) => (
-              // Usa entry.id como key (único e estável)
-              <li key={entry.id} className="flex items-center gap-3 px-4 md:px-5 py-2.5 hover:bg-white/2 transition-colors">
-                <button
-                  onClick={() => onToggle(entry)}
-                  disabled={saving}
-                  className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
-                    entry.completed
-                      ? 'bg-violet-600 border-violet-600 text-white'
-                      : 'border-zinc-700 hover:border-violet-500'
-                  }`}
-                >
-                  {entry.completed && (
-                    <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="none">
-                      <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </button>
-                <span className={`text-sm flex-1 transition-colors ${
-                  entry.completed ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-200'
-                }`}>
-                  {entry.title}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={entries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+              <ul className="divide-y divide-white/4">
+                {entries.map((entry) => (
+                  <SortableEntry
+                    key={entry.id}
+                    entry={entry}
+                    onToggle={onToggle}
+                    saving={saving}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
 
           <div className="px-4 md:px-5 py-3 border-t border-white/4">
             {addOpen ? (
@@ -170,7 +244,6 @@ export default function SeriesPage() {
   }
 
   async function handleToggle(entry) {
-    // Optimistic update usando entry.id
     setSeriesList((prev) =>
       prev.map((s) => ({
         ...s,
@@ -184,7 +257,6 @@ export default function SeriesPage() {
       await fetch('/api/series/entry', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        // Envia entry.id em vez de rowIndex/colIndex
         body: JSON.stringify({ id: entry.id, completed: !entry.completed }),
       })
     } catch {
@@ -198,10 +270,19 @@ export default function SeriesPage() {
     await fetch('/api/series/entry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // Envia seriesId (número) em vez de colIndex
       body: JSON.stringify({ seriesId, title }),
     })
     fetchSeries()
+  }
+
+  async function handleReorderEntries(newOrder) {
+    await fetch('/api/series/entry/reorder', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        entries: newOrder.map((e, index) => ({ id: e.id, position: index + 1 })),
+      }),
+    })
   }
 
   async function handleAddSeries() {
@@ -261,12 +342,12 @@ export default function SeriesPage() {
             ) : (
               <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
                 {seriesList.map((series) => (
-                  // Usa series.id como key (estável, único)
                   <SeriesCard
                     key={series.id}
                     series={series}
                     onToggle={handleToggle}
                     onAddEntry={handleAddEntry}
+                    onReorderEntries={handleReorderEntries}
                     saving={saving}
                   />
                 ))}
