@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
@@ -8,8 +8,7 @@ import { StatusBadge, CompletionBar, Button, Modal, Select } from '@/components/
 import { GameForm } from '@/components/GameForm'
 import { PLATFORMS, ACCOUNT_STATUSES, formatGameDate } from '@/lib/constants'
 import { Pencil, Trash2, Plus, Search, SlidersHorizontal } from 'lucide-react'
-import { AuthModal } from '@/components/AuthModal'
-import { useAuth } from '@/lib/useAuth'
+import { useAuth } from '@/components/AuthProvider'
 
 export default function GamesPage() {
   const [games, setGames] = useState([])
@@ -28,7 +27,7 @@ export default function GamesPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState('title')
 
-  const { authOpen, setAuthOpen, requireAuth, submitPassword } = useAuth()
+  const { requireAuth } = useAuth()
 
   useEffect(() => { fetchGames() }, [])
 
@@ -39,7 +38,7 @@ export default function GamesPage() {
       const res = await fetch('/api/games')
       if (!res.ok) throw new Error('Failed to load games')
       setGames(await res.json())
-    } catch (e) {
+    } catch (e: any) {
       setError(e.message)
     } finally {
       setLoading(false)
@@ -58,7 +57,7 @@ export default function GamesPage() {
       const newGame = await res.json()
       setGames((g) => [...g, newGame])
       setAddOpen(false)
-    } catch (e) {
+    } catch (e: any) {
       alert(e.message)
     } finally {
       setSaving(false)
@@ -77,7 +76,7 @@ export default function GamesPage() {
       const updated = await res.json()
       setGames((g) => g.map((x) => (x.id === updated.id ? updated : x)))
       setEditGame(null)
-    } catch (e) {
+    } catch (e: any) {
       alert(e.message)
     } finally {
       setSaving(false)
@@ -91,7 +90,7 @@ export default function GamesPage() {
       if (!res.ok) throw new Error('Failed to delete game')
       setGames((g) => g.filter((x) => x.id !== deleteGame.id))
       setDeleteGame(null)
-    } catch (e) {
+    } catch (e: any) {
       alert(e.message)
     } finally {
       setSaving(false)
@@ -122,13 +121,10 @@ export default function GamesPage() {
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header mobile com hambúrguer */}
         <MobileHeader title="Games" />
 
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
-
-            {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">Games</h1>
@@ -140,7 +136,6 @@ export default function GamesPage() {
               </Button>
             </div>
 
-            {/* Search & Filters */}
             <div className="flex flex-col gap-3 mb-6">
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -188,7 +183,6 @@ export default function GamesPage() {
               )}
             </div>
 
-            {/* Conteúdo */}
             {loading ? (
               <div className="flex items-center justify-center h-64 text-zinc-600">Loading games…</div>
             ) : error ? (
@@ -198,7 +192,6 @@ export default function GamesPage() {
               </div>
             ) : (
               <>
-                {/* ── Tabela (md+) ── */}
                 <div className="hidden md:block bg-[#0f1117] border border-white/6 rounded-xl overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -251,7 +244,6 @@ export default function GamesPage() {
                   </div>
                 </div>
 
-                {/* ── Cards (mobile) ── */}
                 <div className="md:hidden flex flex-col gap-2">
                   {filtered.length === 0 && (
                     <p className="text-center text-zinc-600 py-16">No games found</p>
@@ -274,10 +266,10 @@ export default function GamesPage() {
                             </div>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            <Button variant="ghost" size="icon" onClick={() => setEditGame(g)}>
+                            <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setEditGame(g))}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setDeleteGame(g)}>
+                            <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setDeleteGame(g))}>
                               <Trash2 className="w-3.5 h-3.5 text-red-500" />
                             </Button>
                           </div>
@@ -298,7 +290,6 @@ export default function GamesPage() {
         </main>
       </div>
 
-      {/* Modals */}
       <Modal isOpen={addOpen} onClose={() => setAddOpen(false)} title="Add game">
         <GameForm onSubmit={handleAdd} onCancel={() => setAddOpen(false)} loading={saving} />
       </Modal>
@@ -320,11 +311,6 @@ export default function GamesPage() {
           </div>
         )}
       </Modal>
-      <AuthModal
-        isOpen={authOpen}
-        onClose={() => setAuthOpen(false)}
-        onSubmit={submitPassword}
-      />  
     </div>
   )
 }

@@ -1,5 +1,6 @@
-import { Outfit, DM_Sans } from 'next/font/google'
+﻿import { Outfit, DM_Sans } from 'next/font/google'
 import './globals.css'
+import { AuthProvider } from '@/components/AuthProvider'
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -18,11 +19,11 @@ export const metadata = {
   description: 'Personal game collection tracker',
 }
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${outfit.variable} ${dmSans.variable}`}>
       <body className="bg-[#080a0f] text-zinc-100 font-body antialiased">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   )

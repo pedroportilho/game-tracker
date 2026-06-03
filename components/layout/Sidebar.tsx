@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/components/AuthProvider'
 
 const NAV = [
   {
@@ -69,7 +70,15 @@ function ChevronIcon({ collapsed }) {
 // ─── Sidebar Desktop (colapsável) ────────────────────────────────────────────
 function DesktopSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const { user, logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    router.refresh()
+    router.push('/dashboard')
+  }
 
   return (
     <aside
@@ -127,7 +136,22 @@ function DesktopSidebar() {
           <ChevronIcon collapsed={collapsed} />
           {!collapsed && <span className="text-xs" style={{ whiteSpace: 'nowrap' }}>Recolher</span>}
         </button>
-        {!collapsed && <p className="text-[10px] text-zinc-700 text-center">Powered by Google Sheets</p>}
+        {user ? (
+          <button
+            onClick={handleLogout}
+            className={`flex items-center rounded-lg px-2 py-2 text-red-400 hover:text-white hover:bg-red-500/10 transition-all duration-150 ${
+              collapsed ? 'justify-center' : 'gap-2'
+            }`}
+            title={collapsed ? 'Logout' : undefined}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            {!collapsed && <span className="text-xs" style={{ whiteSpace: 'nowrap' }}>Logout</span>}
+          </button>
+        ) : null}
       </div>
     </aside>
   )

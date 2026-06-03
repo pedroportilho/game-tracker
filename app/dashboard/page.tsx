@@ -1,12 +1,20 @@
+﻿// Dashboard page dependencies and reusable UI components
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { StatCard } from '@/components/ui'
-import { getGames, type Game } from '@/lib/supabase'
+import { AuthPrompt } from '@/components/AuthPrompt'
+import { getGames } from '@/lib/supabase'
+import { getUserFromCookies } from '@/lib/auth'
 import { formatGameDate } from '@/lib/constants'
 import { StatusBadge } from '@/components/ui'
+import styles from './dashboard.module.css'
 
-async function getDashboardData() {
-  const games = await getGames()
+// Force the page to be rendered dynamically for each request
+export const dynamic = 'force-dynamic'
+
+// Fetch and aggregate dashboard statistics from the user's game list
+async function getDashboardData(userId: string) {
+  const games = await getGames(userId)
 
   const total = games.length
   const withCompletion = games.filter((g) => g.completion != null)
@@ -54,6 +62,7 @@ async function getDashboardData() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10)
 
+  // Recent activity is sorted by date descending and limited for the dashboard view
   const recent = games
     .filter((g) => g.date)
     .sort((a, b) => {
@@ -71,143 +80,153 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
-  const d = await getDashboardData()
+  const user = await getUserFromCookies()
+
+  // If the user is not authenticated, show a prompt instead of the dashboard
+  if (!user) {
+    return (
+      <div className={styles.authFallback}>
+        <Sidebar />
+        <div className={styles.authPromptWrapper}>
+          <AuthPrompt
+            title="Acesse sua conta"
+            description="Entre ou crie uma conta para ver seu dashboard pessoal, estatísticas e progresso."
+          />
+        </div>
+      </div>
+    )
+  }
+
+  const d = await getDashboardData(user.id)
 
   return (
-    <div className="flex min-h-screen bg-[#080a0f]">
+    <div className={styles.dashboardPage}>
       <Sidebar />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={styles.dashboardMain}>
         <MobileHeader title="Dashboard" />
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
+        <main className={styles.dashboardContent}>
+          <div className={styles.dashboardGrid}>
+            {/* Main dashboard summary card */}
 
-            {/* Header */}
-            <div className="mb-6 md:mb-8">
-              <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">Dashboard</h1>
-              <p className="text-zinc-600 text-sm">{d.total} games tracked across all platforms</p>
-            </div>
-
-            {/* Top stats — 2 colunas no mobile, 4 no desktop */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-              <StatCard label="Total Games" value={d.total} />
-              <StatCard label="Completed" value={d.completed} sub={`${Math.round((d.completed / d.total) * 100)}% of library`} />
-              <StatCard label="Platinum Rate" value={`${Math.round(d.platRate * 100)}%`} sub={`${d.platCount} platinums`} accent />
-              <StatCard label="Avg Completion" value={`${Math.round(d.avgCompletion * 100)}%`} />
-            </div>
-
-            {/* Account status — 3 colunas em todos os tamanhos */}
-            <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2">Preserved</p>
-                <p className="text-xl md:text-2xl font-display font-bold text-emerald-400">{d.preservedCount}</p>
-              </div>
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">Lost Accounts</p>
-                <p className="text-xl md:text-2xl font-display font-bold text-red-400">{d.lostCount}</p>
-              </div>
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2">Re-earned</p>
-                <p className="text-xl md:text-2xl font-display font-bold text-blue-400">{d.reEarnedCount}</p>
-              </div>
-            </div>
-
-            {/* Completion buckets + platforms — empilhados no mobile */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-5">
-                <h2 className="font-display font-bold text-sm text-zinc-300 mb-4 uppercase tracking-wide">Completion Distribution</h2>
-                <div className="flex flex-col gap-3">
-                  {Object.entries(d.buckets).map(([label, count]) => {
-                    const pct = d.total ? Math.round((count / d.total) * 100) : 0
-                    const color =
-                      label === '100%' ? 'bg-violet-500' :
-                      label === '76–99%' ? 'bg-emerald-500' :
-                      label === '51–75%' ? 'bg-amber-500' :
-                      label === 'No data' ? 'bg-zinc-700' : 'bg-zinc-600'
-                    return (
-                      <div key={label} className="flex items-center gap-3">
-                        <span className="text-xs text-zinc-500 w-14 text-right tabular-nums">{label}</span>
-                        <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">
-                          <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="text-xs text-zinc-500 w-8 tabular-nums">{count}</span>
-                      </div>
-                    )
-                  })}
+              <div className={styles.dashboardHeader}>
+                <div>
+                  <h1 className={styles.dashboardTitle}>Dashboard</h1>
+                  <p className={styles.dashboardSubtitle}>{d.total} games tracked across all platforms</p>
                 </div>
               </div>
 
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-5">
-                <h2 className="font-display font-bold text-sm text-zinc-300 mb-4 uppercase tracking-wide">Top Platforms</h2>
-                <div className="flex flex-col gap-3">
-                  {d.platformStats.map(({ platform, count }) => {
-                    const pct = d.total ? Math.round((count / d.total) * 100) : 0
-                    return (
-                      <div key={platform} className="flex items-center gap-3">
-                        <span className="text-xs text-zinc-500 w-20 truncate">{platform}</span>
-                        <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">
-                          <div className="h-full rounded-full bg-violet-500/60" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="text-xs text-zinc-500 w-8 tabular-nums">{count}</span>
-                      </div>
-                    )
-                  })}
+              <div className={styles.dashboardStatsSection}>
+                {/* Primary stats row with the main metrics */}
+                <div className={styles.dashboardPrimaryStats}>
+                  <StatCard label="Total Games" value={d.total} />
+                  <StatCard label="Completed" value={d.completed} sub={`${d.total ? `${Math.round((d.completed / d.total) * 100)}% of library` : '0% of library'}`} />
+                  <StatCard label="Platinum Rate" value={`${Math.round(d.platRate * 100)}%`} sub={`${d.platCount} platinums`} accent />
+                  <StatCard label="Avg Completion" value={`${Math.round(d.avgCompletion * 100)}%`} />
+                </div>
+
+                {/* Secondary status cards for account state counts */}
+                <div className={styles.dashboardSecondaryStats}>
+                  <div className={styles.statusCard}>
+                    <p className={styles.statusLabel}>Preserved</p>
+                    <p className={`${styles.statusValue} ${styles.statusValueGreen}`}>{d.preservedCount}</p>
+                  </div>
+                  <div className={styles.statusCard}>
+                    <p className={styles.statusLabel}>Lost accounts</p>
+                    <p className={`${styles.statusValue} ${styles.statusValueRed}`}>{d.lostCount}</p>
+                  </div>
+                  <div className={styles.statusCard}>
+                    <p className={styles.statusLabel}>Re-earned</p>
+                    <p className={`${styles.statusValue} ${styles.statusValueBlue}`}>{d.reEarnedCount}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Genre breakdown — scroll horizontal no mobile */}
-            <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-5 mb-6 md:mb-8">
-              <h2 className="font-display font-bold text-sm text-zinc-300 mb-4 uppercase tracking-wide">Genre Breakdown</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[360px]">
-                  <thead>
-                    <tr className="text-[11px] text-zinc-600 uppercase tracking-widest border-b border-white/5">
-                      <th className="text-left pb-3 font-semibold">Genre</th>
-                      <th className="text-right pb-3 font-semibold">Games</th>
-                      <th className="text-right pb-3 font-semibold">Platinum</th>
-                      <th className="text-right pb-3 font-semibold">Plat. Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {d.genreStats.map(({ genre, finished, platinum, rate }) => (
-                      <tr key={genre} className="border-b border-white/4 hover:bg-white/2 transition-colors">
-                        <td className="py-2.5 text-zinc-300">{genre}</td>
-                        <td className="py-2.5 text-right text-zinc-500 tabular-nums">{finished}</td>
-                        <td className="py-2.5 text-right text-zinc-500 tabular-nums">{platinum}</td>
-                        <td className="py-2.5 text-right tabular-nums">
-                          <span className={rate >= 0.8 ? 'text-violet-400' : rate >= 0.5 ? 'text-emerald-400' : 'text-zinc-500'}>
-                            {Math.round(rate * 100)}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
-            {/* Recent activity */}
-            <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-5">
-              <h2 className="font-display font-bold text-sm text-zinc-300 mb-4 uppercase tracking-wide">Recent Activity</h2>
-              <div className="flex flex-col gap-2">
-                {d.recent.map((g) => {
-                  const date = formatGameDate(g.date)
-                  return (
-                    <div key={g.id} className="flex items-center gap-3 py-2 border-b border-white/4 last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-zinc-200 truncate">{g.title}</p>
-                        <p className="text-xs text-zinc-600">{g.platform} · {date ?? '—'}</p>
+            {/* Distribution and platform visualizations */}
+            <section className={styles.gridTwoColumns}>
+              <div className={styles.chartCard}>
+                <div className={styles.chartHeader}>
+                  <p className={styles.sectionTitle}>Completion distribution</p>
+                </div>
+                <div className={styles.chartGroup}>
+                  {Object.entries(d.buckets).map(([label, count]) => (
+                    <div key={label} className={styles.chartItem}>
+                      <div className={styles.chartLabel}>{label}</div>
+                      <div className={styles.chartBar}>
+                        <div className={styles.chartBarFill} style={{ width: `${Math.min(100, Math.max(5, d.total ? (count / d.total) * 100 : 0))}%` }} />
                       </div>
-                      {g.platinum && <span className="text-sm shrink-0">🏆</span>}
-                      <span className="px-4 py-3"><StatusBadge status={g.account_status} /></span>
+                      <div className={styles.chartValue}>{count}</div>
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
 
+              <div className={styles.chartCard}>
+                <p className={styles.sectionTitle}>Top platforms</p>
+                <div className={styles.chartGroup}>
+                  {d.platformStats.map((platform) => {
+                    const maxCount = d.platformStats[0]?.count || 1
+                    const width = Math.round((platform.count / maxCount) * 100)
+                    return (
+                      <div key={platform.platform} className={styles.chartItem}>
+
+                          <div className={styles.chartLabel}>{platform.platform}</div>
+                          <div className={styles.chartBar}>
+                            <div className={styles.chartBarFill} style={{ width: `${width}%` }} />
+                          </div>
+                          <div className={styles.chartValue}>{platform.count}</div>
+
+
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* Recent activity timeline shown prior to genre details */}
+            <section className={styles.recentSection}>
+              <p className={styles.sectionTitle}>Recent activity</p>
+              <div className={styles.recentList}>
+                {d.recent.map((game) => (
+                  <div key={game.id} className={styles.recentItem}>
+                    <div className={styles.recentText}>
+                      <p className={styles.recentTitle}>{game.title}</p>
+                      <p className={styles.recentMeta}>{game.platform} · {formatGameDate(game.date)}</p>
+                    </div>
+                    <StatusBadge status={game.account_status} />
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Genre breakdown table shown after recent activity */}
+            <section className={styles.genreSection}>
+              <div className={styles.chartHeader}>
+                <p className={styles.sectionTitle}>Genre Breakdown</p>
+                <h2 className={styles.chartTitle}>Most played genres</h2>
+              </div>
+              <div className={styles.genreTable}>
+                <div className={styles.genreHeader}>
+                  <span>Genre</span>
+                  <span className={styles.genreCellRight}>Games</span>
+                  <span className={styles.genreCellRight}>Platinum</span>
+                  <span className={styles.genreCellRight}>Plat rate</span>
+                </div>
+                <div>
+                  {d.genreStats.map((genre) => (
+                    <div key={genre.genre} className={styles.genreRow}>
+                      <span>{genre.genre}</span>
+                      <span className={styles.genreCellRight}>{genre.finished}</span>
+                      <span className={styles.genreCellRight}>{Math.round(genre.platinum)}</span>
+                      <span className={styles.genreCellRate}>{Math.round(genre.rate * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
           </div>
         </main>
       </div>

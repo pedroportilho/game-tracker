@@ -1,10 +1,11 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { StatusBadge, CompletionBar } from '@/components/ui'
 import { getGameById } from '@/lib/supabase'
 import { getGame, igdbImageUrl } from '@/lib/igdb'
+import { getUserFromCookies } from '@/lib/auth'
 import { formatGameDate } from '@/lib/constants'
 import { ArrowLeft, ExternalLink, Calendar, Trophy } from 'lucide-react'
 import { GameEditButton } from '@/components/GameEditButton'
@@ -22,8 +23,24 @@ async function fetchIgdb(igdbId) {
 }
 
 export default async function GameDetailPage({ params }) {
+  const user = await getUserFromCookies()
+  if (!user) {
+    return (
+      <div className="flex min-h-screen bg-[#080a0f]">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="max-w-xl text-center text-zinc-200">
+            <h1 className="text-3xl font-bold mb-4">Login required</h1>
+            <p className="text-zinc-400 mb-6">Sign in from the Games page to view game details.</p>
+            <Link href="/games" className="inline-flex items-center justify-center rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-500 transition">Go to Games</Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const { id } = await params
-  const game = await getGameById(id)
+  const game = await getGameById(id, user.id)
   if (!game) notFound()
 
   const igdb = await fetchIgdb(game.igdb_id)
@@ -59,9 +76,7 @@ export default async function GameDetailPage({ params }) {
               <GameEditButton game={game} />
             </div>
 
-            {/* Hero: capa + info — coluna no mobile, lado-a-lado no md+ */}
             <div className="flex flex-col md:grid md:grid-cols-[200px_1fr] gap-5 md:gap-8 mb-6 md:mb-8">
-              {/* Capa */}
               <div className="flex justify-center md:block">
                 {cover ? (
                   <img
@@ -76,7 +91,6 @@ export default async function GameDetailPage({ params }) {
                 )}
               </div>
 
-              {/* Info */}
               <div className="flex flex-col gap-4">
                 <div>
                   <p className="text-xs text-zinc-600 mb-1 tracking-widest uppercase">{game.id}</p>
@@ -122,92 +136,51 @@ export default async function GameDetailPage({ params }) {
                   </div>
                 )}
 
-                {game.notes && (
+                {summary && (
+                  <div className="space-y-3">
+                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">IGDB summary</p>
+                    <p className="text-sm leading-relaxed text-zinc-300">{summary}</p>
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {releaseDate && (
+                    <div className="rounded-xl bg-[#0f1117] border border-white/6 p-4">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Released</p>
+                      <p className="text-sm text-zinc-100">{releaseDate}</p>
+                    </div>
+                  )}
+
+                  {igdbPlatforms.length > 0 && (
+                    <div className="rounded-xl bg-[#0f1117] border border-white/6 p-4">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">IGDB platforms</p>
+                      <p className="text-sm text-zinc-100">{igdbPlatforms.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+
+                {igdbUrl && (
+                  <Link href={igdbUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 transition">
+                    <ExternalLink className="w-4 h-4" /> View on IGDB
+                  </Link>
+                )}
+
+                {developers.length > 0 && (
                   <div>
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Notes</p>
-                    <p className="text-sm text-zinc-300 whitespace-pre-line">{game.notes}</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Developers</p>
+                    <p className="text-sm text-zinc-100">{developers.join(', ')}</p>
+                  </div>
+                )}
+
+                {publishers.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Publishers</p>
+                    <p className="text-sm text-zinc-100">{publishers.join(', ')}</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* IGDB Section */}
-            {igdb ? (
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-display font-bold text-lg text-zinc-100">From IGDB</h2>
-                  {igdbUrl && (
-                    <a href={igdbUrl} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
-                      View on IGDB <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                </div>
-
-                {summary && (
-                  <div>
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-2">Summary</p>
-                    <p className="text-sm text-zinc-300 leading-relaxed">{summary}</p>
-                  </div>
-                )}
-
-                {/* Grid: 1 coluna no mobile, 2 no md+ */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  {releaseDate && (
-                    <div>
-                      <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Release date</p>
-                      <p className="text-sm text-zinc-200">{releaseDate}</p>
-                    </div>
-                  )}
-                  {developers.length > 0 && (
-                    <div>
-                      <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Developer</p>
-                      <p className="text-sm text-zinc-200">{developers.join(', ')}</p>
-                    </div>
-                  )}
-                  {publishers.length > 0 && (
-                    <div>
-                      <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Publisher</p>
-                      <p className="text-sm text-zinc-200">{publishers.join(', ')}</p>
-                    </div>
-                  )}
-                </div>
-
-                {igdbGenres.length > 0 && (
-                  <div>
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Genres</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {igdbGenres.map((g) => (
-                        <span key={g} className="px-2 py-0.5 rounded-md text-xs bg-zinc-800 text-zinc-300 border border-zinc-700/40">
-                          {g}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {igdbPlatforms.length > 0 && (
-                  <div>
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Available on</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {igdbPlatforms.map((p) => (
-                        <span key={p} className="px-2 py-0.5 rounded-md text-xs bg-zinc-800 text-zinc-400 border border-zinc-700/30">
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : game.igdb_id ? (
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-6 text-sm text-zinc-500">
-                Linked to IGDB #{game.igdb_id} but couldn't load details. Check API credentials.
-              </div>
-            ) : (
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-6 text-sm text-zinc-500">
-                This game isn't linked to IGDB yet. Edit it from the games list to search and link.
-              </div>
-            )}
           </div>
         </main>
       </div>

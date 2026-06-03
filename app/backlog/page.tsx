@@ -1,18 +1,30 @@
+﻿import Link from 'next/link'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { CompletionBar } from '@/components/ui'
-import { getBacklog } from '@/lib/supabase'
-import type { Game } from '@/lib/supabase'
-import Link from 'next/link'
+import { AuthPrompt } from '@/components/AuthPrompt'
+import { getBacklog, type Game } from '@/lib/supabase'
+import { getUserFromCookies } from '@/lib/auth'
+
+export const dynamic = 'force-dynamic'
 
 export default async function BacklogPage() {
-  //const games = await getGames()
+  const user = await getUserFromCookies()
+  if (!user) {
+    return (
+      <div className="flex min-h-screen bg-[#080a0f]">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center p-8">
+          <AuthPrompt
+            title="Entre para ver seu backlog"
+            description="Faça login ou crie uma conta para acessar a lista de jogos perdidos e sua recuperação."
+          />
+        </div>
+      </div>
+    )
+  }
 
-  //const backlog = games
-  //  .filter((g) => g.accountStatus === 'Lost Account')
-  //  .sort((a, b) => a.title.localeCompare(b.title))
-
-  const games = await getBacklog()
+  const games = await getBacklog(user.id)
   const backlog = games.sort((a, b) => a.title.localeCompare(b.title))
 
   const byPlatform: Record<string, Game[]> = {}
@@ -63,7 +75,6 @@ export default async function BacklogPage() {
                 .sort(([, a], [, b]) => b.length - a.length)
                 .map(([platform, platformGames]) => (
                   <div key={platform} className="bg-[#0f1117] border border-white/6 rounded-xl overflow-hidden">
-                    {/* Platform header */}
                     <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-white/6 bg-white/2">
                       <h2 className="font-display font-bold text-sm text-zinc-300 uppercase tracking-wide">{platform}</h2>
                       <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded-full">
@@ -71,7 +82,6 @@ export default async function BacklogPage() {
                       </span>
                     </div>
 
-                    {/* Tabela no desktop */}
                     <table className="hidden md:table w-full text-sm">
                       <tbody>
                         {platformGames.map((g) => (
@@ -81,7 +91,7 @@ export default async function BacklogPage() {
                             </td>
                             <td className="px-5 py-3">
                               <Link href={`/games/${g.id}`} className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors">
-                                  {g.title}
+                                {g.title}
                               </Link>
                             </td>
                             <td className="px-5 py-3 w-48">
@@ -95,7 +105,6 @@ export default async function BacklogPage() {
                       </tbody>
                     </table>
 
-                    {/* Cards no mobile */}
                     <div className="md:hidden divide-y divide-white/4">
                       {platformGames.map((g) => (
                         <div key={g.id} className="px-4 py-3">
@@ -104,9 +113,7 @@ export default async function BacklogPage() {
                             <span className="text-sm text-zinc-200 font-medium">{g.title}</span>
                           </div>
                           <CompletionBar value={g.completion} />
-                          {g.notes && (
-                            <p className="text-xs text-zinc-600 mt-1.5 line-clamp-2">{g.notes}</p>
-                          )}
+                          {g.notes && <p className="text-xs text-zinc-600 mt-1.5 line-clamp-2">{g.notes}</p>}
                         </div>
                       ))}
                     </div>

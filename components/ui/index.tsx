@@ -42,6 +42,7 @@ type StatCardProps = {
 
 // ── Badge ────────────────────────────────────────────────────────────────────
 export function StatusBadge({ status }: StatusBadgeProps) {
+  console.log(JSON.stringify(status)) // ← adicione isso
   const s = STATUS_STYLES[status] ?? { bg: 'bg-zinc-800', text: 'text-zinc-400', border: 'border-zinc-700/30' }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${s.bg} ${s.text} ${s.border}`}>
@@ -144,9 +145,9 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
 // ── StatCard ──────────────────────────────────────────────────────────────────
 export function StatCard({ label, value, sub, accent = false }: StatCardProps) {
   return (
-    <div className={`rounded-xl p-5 border ${accent ? 'bg-violet-950/20 border-violet-700/20' : 'bg-[#0f1117] border-white/6'}`}>
+    <div className={`rounded-xl p-5 border bg-[#0f1117] border-white/6 ${accent ? 'border-violet-500/20 bg-violet-950/20' : ''}`}>
       <p className="text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-2">{label}</p>
-      <p className={`text-3xl font-display font-bold ${accent ? 'text-violet-300' : 'text-zinc-100'}`}>{value}</p>
+      <p className={`text-3xl font-display font-bold text-zinc-100 ${accent ? 'text-violet-300' : 'text-zinc-100'}`}>{value}</p>
       {sub && <p className="text-xs text-zinc-600 mt-1">{sub}</p>}
     </div>
   )
