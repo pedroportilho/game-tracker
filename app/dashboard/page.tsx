@@ -206,7 +206,6 @@ export default async function DashboardPage() {
             <section className={styles.genreSection}>
               <div className={styles.chartHeader}>
                 <p className={styles.sectionTitle}>Genre Breakdown</p>
-                <h2 className={styles.chartTitle}>Most played genres</h2>
               </div>
               <div className={styles.genreTable}>
                 <div className={styles.genreHeader}>

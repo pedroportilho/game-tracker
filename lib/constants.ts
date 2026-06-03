@@ -7,11 +7,9 @@ export const PLATFORMS = [
 
 export const ACCOUNT_STATUSES = [
   'Preserved',
-  'Lost Account',
+  'Lost',
   'Re-earned',
-  'Nintendo',
-  'No Proof',
-  'RetroAchievements',
+  'Unverified',
 ]
 
 export const GENRES = [
@@ -25,11 +23,9 @@ export const GENRES = [
 
 export const STATUS_STYLES = {
   'Preserved':        { bg: 'bg-emerald-900/40', text: 'text-emerald-400', border: 'border-emerald-700/30' },
-  'Lost Account':     { bg: 'bg-red-900/40',     text: 'text-red-400',     border: 'border-red-700/30' },
+  'Lost':     { bg: 'bg-red-900/40',     text: 'text-red-400',     border: 'border-red-700/30' },
   'Re-earned':        { bg: 'bg-blue-900/40',    text: 'text-blue-400',    border: 'border-blue-700/30' },
-  'Nintendo':         { bg: 'bg-red-900/30',     text: 'text-red-300',     border: 'border-red-700/20' },
-  'No Proof':         { bg: 'bg-zinc-800',       text: 'text-zinc-400',    border: 'border-zinc-700/30' },
-  'RetroAchievements':{ bg: 'bg-amber-900/40',   text: 'text-amber-400',   border: 'border-amber-700/30' },
+  'Unverified':         { bg: 'bg-zinc-800',       text: 'text-zinc-400',    border: 'border-zinc-700/30' },
 }
 
 // Excel serial → JS Date in UTC (avoids timezone shifting the year)
