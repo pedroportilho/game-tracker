@@ -1,7 +1,7 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { StatCard } from '@/components/ui'
-import { getGames } from '@/lib/supabase'
+import { getGames, type Game } from '@/lib/supabase'
 import { formatGameDate } from '@/lib/constants'
 import { StatusBadge } from '@/components/ui'
 
@@ -31,7 +31,7 @@ async function getDashboardData() {
     else buckets['100%']++
   }
 
-  const genreMap = {}
+  const genreMap: Record<string, { finished: number; platinum: number }> = {}
   for (const g of games) {
     for (const genre of g.genres) {
       if (!genreMap[genre]) genreMap[genre] = { finished: 0, platinum: 0 }
@@ -41,10 +41,10 @@ async function getDashboardData() {
   }
 
   const genreStats = Object.entries(genreMap)
-    .map(([genre, s]) => ({ genre, ...s, rate: s.finished ? s.platinum / s.finished : 0 }))
+    .map(([genre, s]) => ({ genre, finished: s.finished, platinum: s.platinum, rate: s.finished ? s.platinum / s.finished : 0 }))
     .sort((a, b) => b.finished - a.finished)
 
-  const platformMap = {}
+  const platformMap: Record<string, number> = {}
   for (const g of games) {
     platformMap[g.platform] = (platformMap[g.platform] ?? 0) + 1
   }
@@ -57,8 +57,8 @@ async function getDashboardData() {
   const recent = games
     .filter((g) => g.date)
     .sort((a, b) => {
-      const pa = new Date(a.date)
-      const pb = new Date(b.date)
+      const pa = new Date(a.date).getTime()
+      const pb = new Date(b.date).getTime()
       return (isNaN(pb) ? 0 : pb) - (isNaN(pa) ? 0 : pa)
     })
     .slice(0, 8)

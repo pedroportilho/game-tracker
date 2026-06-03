@@ -1,18 +1,61 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, ChangeEvent, FormEvent, KeyboardEvent } from 'react'
+import type { Game } from '@/lib/supabase'
 import { Input, Select, Button } from '@/components/ui'
 import { PLATFORMS, ACCOUNT_STATUSES, GENRES } from '@/lib/constants'
 import { Search, X } from 'lucide-react'
 
-const EMPTY = {
+type GameFormState = {
+  title: string
+  platform: string
+  date: string
+  platinum: boolean
+  completion: string
+  account_status: string
+  genres: string[]
+  notes: string
+  igdb_id: number | null
+}
+
+type GameFormErrors = {
+  title?: string
+  platform?: string
+  account_status?: string
+  genres?: string
+  completion?: string
+  [key: string]: string | undefined
+}
+
+type IgdbSearchResult = {
+  id: number
+  name: string
+  cover?: string | null
+  year?: number | null
+  platforms?: string[]
+}
+
+type IgdbSearchProps = {
+  onPick: (result: IgdbSearchResult) => void
+  currentIgdbId: number | null
+  onClear: () => void
+}
+
+type GameFormProps = {
+  initialData?: Partial<Game> | null
+  onSubmit: (data: any) => void | Promise<void>
+  onCancel: () => void
+  loading: boolean
+}
+
+const EMPTY: GameFormState = {
   title: '', platform: '', date: '', platinum: false,
   completion: '', account_status: 'Preserved', genres: [], notes: '',
   igdb_id: null,
 }
 
 // Converte "May 2024" → "2024-05-01" para popular o <input type="date">
-function displayDateToInputValue(dateStr) {
+function displayDateToInputValue(dateStr?: string | null) {
   if (!dateStr) return ''
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
@@ -20,29 +63,30 @@ function displayDateToInputValue(dateStr) {
     return `${y}-${m}-${d}`
   }
   const d = new Date(`${dateStr} 01`)
-  if (!isNaN(d)) return d.toISOString().slice(0, 10)
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
   return ''
 }
 
-function validate(form) {
-  const e = {}
+function validate(form: GameFormState) {
+  const e: GameFormErrors = {}
   if (!form.title.trim()) e.title = 'Required'
   if (!form.platform) e.platform = 'Required'
   if (!form.account_status) e.account_status = 'Required'
   if (form.genres.length === 0) e.genres = 'Select at least one'
-  if (form.completion !== '' && (isNaN(form.completion) || form.completion < 0 || form.completion > 100))
+  if (form.completion !== '' && (isNaN(Number(form.completion)) || Number(form.completion) < 0 || Number(form.completion) > 100))
     e.completion = '0–100'
   return e
 }
 
-function mapIgdbGenres(igdbGenres) {
+function mapIgdbGenres(igdbGenres: unknown) {
   const set = new Set(GENRES.map((g) => g.toLowerCase()))
-  const out = []
-  for (const g of igdbGenres ?? []) {
-    const name = typeof g === 'string' ? g : g?.name
+  const out: string[] = []
+  if (!Array.isArray(igdbGenres)) return out
+  for (const g of igdbGenres) {
+    const name = typeof g === 'string' ? g : (g as any)?.name
     if (!name) continue
     if (set.has(name.toLowerCase())) {
-      out.push(GENRES.find((x) => x.toLowerCase() === name.toLowerCase()))
+      out.push(GENRES.find((x) => x.toLowerCase() === name.toLowerCase()) as string)
     } else if (name.toLowerCase().includes('role-playing')) {
       out.push('RPG')
     }
@@ -50,13 +94,13 @@ function mapIgdbGenres(igdbGenres) {
   return [...new Set(out)]
 }
 
-function IgdbSearch({ onPick, currentIgdbId, onClear }) {
+function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
+  const [results, setResults] = useState<IgdbSearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const debounceRef = useRef(null)
-  const containerRef = useRef(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -72,12 +116,14 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }) {
         setLoading(false)
       }
     }, 300)
-    return () => clearTimeout(debounceRef.current)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [query])
 
   useEffect(() => {
-    const onClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false)
+    const onClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
@@ -143,8 +189,8 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }) {
   )
 }
 
-export function GameForm({ initialData, onSubmit, onCancel, loading }) {
-  const [form, setForm] = useState(() => {
+export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormProps) {
+  const [form, setForm] = useState<GameFormState>(() => {
     if (!initialData) return EMPTY
     return {
       title:          initialData.title ?? '',
@@ -152,16 +198,17 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }) {
       date:           displayDateToInputValue(initialData.date),
       platinum:       initialData.platinum ?? false,
       // Supabase guarda 0.00–1.00 → exibe 0–100 no input
-      completion:     initialData.completion != null ? Math.round(initialData.completion * 100) : '',
+      completion:     initialData.completion != null ? String(Math.round(initialData.completion * 100)) : '',
       account_status: initialData.account_status ?? 'Preserved',
       genres:         Array.isArray(initialData.genres) ? initialData.genres : [],
       notes:          initialData.notes ?? '',
       igdb_id:        initialData.igdb_id ?? null,
     }
   })
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<GameFormErrors>({})
 
-  const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
+  const set = (key: keyof GameFormState, val: GameFormState[keyof GameFormState]) =>
+    setForm((f) => ({ ...f, [key]: val }))
 
   const toggleGenre = (g) =>
     setForm((f) => ({

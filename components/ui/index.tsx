@@ -1,9 +1,47 @@
 'use client'
 
+import { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes } from 'react'
 import { STATUS_STYLES } from '@/lib/constants'
 
+type StatusBadgeProps = { status?: string }
+type CompletionBarProps = { value?: number | null; showLabel?: boolean }
+type ButtonVariant = 'default' | 'primary' | 'ghost' | 'danger'
+type ButtonSize = 'sm' | 'md' | 'icon'
+type ButtonProps = {
+  children: ReactNode
+  onClick?: () => void
+  variant?: ButtonVariant
+  size?: ButtonSize
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
+  className?: string
+}
+type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+  label?: string
+  error?: string
+  className?: string
+}
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  label?: string
+  error?: string
+  className?: string
+  children: ReactNode
+}
+type ModalProps = {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: ReactNode
+}
+type StatCardProps = {
+  label: string
+  value: string | number | null
+  sub?: string
+  accent?: boolean
+}
+
 // ── Badge ────────────────────────────────────────────────────────────────────
-export function StatusBadge({ status }) {
+export function StatusBadge({ status }: StatusBadgeProps) {
   const s = STATUS_STYLES[status] ?? { bg: 'bg-zinc-800', text: 'text-zinc-400', border: 'border-zinc-700/30' }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${s.bg} ${s.text} ${s.border}`}>
@@ -13,9 +51,9 @@ export function StatusBadge({ status }) {
 }
 
 // ── CompletionBar ─────────────────────────────────────────────────────────────
-export function CompletionBar({ value, showLabel = true }) {
+export function CompletionBar({ value, showLabel = true }: CompletionBarProps) {
   if (value == null) return <span className="text-zinc-700 text-xs">—</span>
-  const pct = Math.round(parseFloat(value) * 100)
+  const pct = Math.round(value * 100)
   const color =
     pct === 100 ? 'bg-violet-500' :
     pct >= 75   ? 'bg-emerald-500' :
@@ -32,7 +70,7 @@ export function CompletionBar({ value, showLabel = true }) {
 }
 
 // ── Button ───────────────────────────────────────────────────────────────────
-export function Button({ children, onClick, variant = 'default', size = 'md', type = 'button', disabled = false, className = '' }) {
+export function Button({ children, onClick, variant = 'default', size = 'md', type = 'button', disabled = false, className = '' }: ButtonProps) {
   const base = 'inline-flex items-center gap-2 font-medium rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer'
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', icon: 'p-2' }
   const variants = {
@@ -50,7 +88,7 @@ export function Button({ children, onClick, variant = 'default', size = 'md', ty
 }
 
 // ── Input ─────────────────────────────────────────────────────────────────────
-export function Input({ label, error, className = '', ...props }) {
+export function Input({ label, error, className = '', ...props }: InputProps) {
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</label>}
@@ -64,7 +102,7 @@ export function Input({ label, error, className = '', ...props }) {
 }
 
 // ── Select ───────────────────────────────────────────────────────────────────
-export function Select({ label, error, children, className = '', ...props }) {
+export function Select({ label, error, children, className = '', ...props }: SelectProps) {
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</label>}
@@ -80,7 +118,7 @@ export function Select({ label, error, children, className = '', ...props }) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-export function Modal({ isOpen, onClose, title, children }) {
+export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   if (!isOpen) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -104,7 +142,7 @@ export function Modal({ isOpen, onClose, title, children }) {
 }
 
 // ── StatCard ──────────────────────────────────────────────────────────────────
-export function StatCard({ label, value, sub, accent = false }) {
+export function StatCard({ label, value, sub, accent = false }: StatCardProps) {
   return (
     <div className={`rounded-xl p-5 border ${accent ? 'bg-violet-950/20 border-violet-700/20' : 'bg-[#0f1117] border-white/6'}`}>
       <p className="text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-2">{label}</p>

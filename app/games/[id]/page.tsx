@@ -199,9 +199,9 @@ export default async function GameDetailPage({ params }) {
                   </div>
                 )}
               </div>
-            ) : game.igdbId ? (
+            ) : game.igdb_id ? (
               <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-6 text-sm text-zinc-500">
-                Linked to IGDB #{game.igdbId} but couldn't load details. Check API credentials.
+                Linked to IGDB #{game.igdb_id} but couldn't load details. Check API credentials.
               </div>
             ) : (
               <div className="bg-[#0f1117] border border-white/6 rounded-xl p-4 md:p-6 text-sm text-zinc-500">

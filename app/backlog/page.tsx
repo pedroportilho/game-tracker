@@ -1,7 +1,8 @@
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { CompletionBar } from '@/components/ui'
-import { getBacklog, getGames } from '@/lib/supabase'
+import { getBacklog } from '@/lib/supabase'
+import type { Game } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default async function BacklogPage() {
@@ -14,7 +15,7 @@ export default async function BacklogPage() {
   const games = await getBacklog()
   const backlog = games.sort((a, b) => a.title.localeCompare(b.title))
 
-  const byPlatform = {}
+  const byPlatform: Record<string, Game[]> = {}
   for (const g of backlog) {
     if (!byPlatform[g.platform]) byPlatform[g.platform] = []
     byPlatform[g.platform].push(g)

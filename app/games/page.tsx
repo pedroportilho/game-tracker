@@ -102,7 +102,7 @@ export default function GamesPage() {
     let list = [...games]
     if (search) list = list.filter((g) => g.title.toLowerCase().includes(search.toLowerCase()))
     if (filterPlatform) list = list.filter((g) => g.platform === filterPlatform)
-    if (filterStatus) list = list.filter((g) => g.accountStatus === filterStatus)
+    if (filterStatus) list = list.filter((g) => g.account_status === filterStatus)
     if (filterPlatinum === 'yes') list = list.filter((g) => g.platinum)
     if (filterPlatinum === 'no') list = list.filter((g) => !g.platinum)
     list.sort((a, b) => {
@@ -110,7 +110,7 @@ export default function GamesPage() {
       if (sortBy === 'completion') return (b.completion ?? -1) - (a.completion ?? -1)
       if (sortBy === 'platform') return a.platform.localeCompare(b.platform)
       if (sortBy === 'date') {
-        return new Date(b.date) - new Date(a.date)
+        return new Date(b.date).getTime() - new Date(a.date).getTime()
       }
       return 0
     })
@@ -283,7 +283,7 @@ export default function GamesPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <StatusBadge status={g.accountStatus} />
+                          <StatusBadge status={g.account_status} />
                           <div className="flex-1">
                             <CompletionBar value={g.completion} />
                           </div>
