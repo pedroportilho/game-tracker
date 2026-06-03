@@ -12,6 +12,14 @@ export const ACCOUNT_STATUSES = [
   'Unverified',
 ]
 
+export const GAME_STATUSES = [
+  'Playing',
+  'Completed',
+  'On Hold',
+  'Dropped',
+  'Backlog'
+]
+
 export const GENRES = [
   'Pinball', 'Adventure', 'Indie', 'Arcade', 'Visual Novel',
   'Card & Board Game', 'MOBA', 'Point-and-click', 'Fighting', 'Shooter',

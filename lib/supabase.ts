@@ -9,6 +9,7 @@ export type Game = {
   platinum: boolean
   completion: number | null
   account_status: string
+  game_status: string
   genres: string[]
   notes: string | null
   igdb_id: number | null
@@ -66,7 +67,7 @@ export async function getGames(userId: string): Promise<Game[]> {
 }
 
 export async function getBacklog(userId: string): Promise<Game[]> {
-  const backlog = 'Lost Account'
+  const backlog = 'Lost'
   const { data, error } = await supabaseAdmin
     .from('games')
     .select('*')

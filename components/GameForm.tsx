@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ChangeEvent, FormEvent, KeyboardEvent } from 'react'
 import type { Game } from '@/lib/supabase'
 import { Input, Select, Button } from '@/components/ui'
-import { PLATFORMS, ACCOUNT_STATUSES, GENRES } from '@/lib/constants'
+import { PLATFORMS, ACCOUNT_STATUSES, GENRES, GAME_STATUSES } from '@/lib/constants'
 import { Search, X } from 'lucide-react'
 
 type GameFormState = {
@@ -13,6 +13,7 @@ type GameFormState = {
   platinum: boolean
   completion: string
   account_status: string
+  game_status: string
   genres: string[]
   notes: string
   igdb_id: number | null
@@ -22,6 +23,7 @@ type GameFormErrors = {
   title?: string
   platform?: string
   account_status?: string
+  game_status?: string
   genres?: string
   completion?: string
   [key: string]: string | undefined
@@ -50,7 +52,7 @@ type GameFormProps = {
 
 const EMPTY: GameFormState = {
   title: '', platform: '', date: '', platinum: false,
-  completion: '', account_status: 'Preserved', genres: [], notes: '',
+  completion: '', account_status: 'Preserved', game_status: 'Backlog', genres: [], notes: '',
   igdb_id: null,
 }
 
@@ -200,6 +202,7 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormP
       // Supabase guarda 0.00–1.00 → exibe 0–100 no input
       completion:     initialData.completion != null ? String(Math.round(initialData.completion * 100)) : '',
       account_status: initialData.account_status ?? 'Preserved',
+      game_status:    initialData.game_status ?? 'Backlog',
       genres:         Array.isArray(initialData.genres) ? initialData.genres : [],
       notes:          initialData.notes ?? '',
       igdb_id:        initialData.igdb_id ?? null,
@@ -249,6 +252,7 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormP
       // Input 0–100 → banco 0.00–1.00
       completion:     form.completion !== '' ? Number(form.completion) / 100 : null,
       account_status: form.account_status,
+      game_status:    form.game_status,
       genres:         form.genres,
       notes:          form.notes.trim() || null,
       igdb_id:        form.igdb_id ?? null,
@@ -278,16 +282,20 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormP
         <Select label="Account Status" value={form.account_status} onChange={(e) => set('account_status', e.target.value)} error={errors.account_status}>
           {ACCOUNT_STATUSES.map((s) => <option key={s}>{s}</option>)}
         </Select>
+        <Select label="Game Status" value={form.game_status} onChange={(e) => set('game_status', e.target.value)} error={errors.game_status}>
+          {GAME_STATUSES.map((s) => <option key={s}>{s}</option>)}
+        </Select>
         <Input label="Completion %" type="number" value={form.completion}
           onChange={(e) => set('completion', e.target.value)} error={errors.completion}
           placeholder="0–100" min="0" max="100" />
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <input type="checkbox" checked={form.platinum} onChange={(e) => set('platinum', e.target.checked)}
+            className="w-4 h-4 accent-violet-500 rounded" />
+          <span className="text-sm text-zinc-300">🏆 Platinum / 100%</span>
+        </label>
       </div>
 
-      <label className="flex items-center gap-2.5 cursor-pointer select-none">
-        <input type="checkbox" checked={form.platinum} onChange={(e) => set('platinum', e.target.checked)}
-          className="w-4 h-4 accent-violet-500 rounded" />
-        <span className="text-sm text-zinc-300">🏆 Platinum / 100%</span>
-      </label>
+
 
       <div>
         <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-2">
