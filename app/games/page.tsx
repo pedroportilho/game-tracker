@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
 import { StatusBadge, CompletionBar, Button, Modal, Select } from '@/components/ui'
 import { GameForm } from '@/components/GameForm'
-import { PLATFORMS, ACCOUNT_STATUSES, formatGameDate } from '@/lib/constants'
+import { PLATFORMS, ACCOUNT_STATUSES, GAME_STATUSES, formatGameDate } from '@/lib/constants'
 import { Pencil, Trash2, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 
@@ -24,6 +24,7 @@ export default function GamesPage() {
   const [filterPlatform, setFilterPlatform] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPlatinum, setFilterPlatinum] = useState('')
+  const [filterGameStatus, setFilterGameStatus] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState('title')
 
@@ -104,6 +105,7 @@ export default function GamesPage() {
     if (filterStatus) list = list.filter((g) => g.account_status === filterStatus)
     if (filterPlatinum === 'yes') list = list.filter((g) => g.platinum)
     if (filterPlatinum === 'no') list = list.filter((g) => !g.platinum)
+    if (filterGameStatus) list = list.filter((g) => g.game_status === filterGameStatus)
     list.sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title)
       if (sortBy === 'completion') return (b.completion ?? -1) - (a.completion ?? -1)
@@ -114,7 +116,7 @@ export default function GamesPage() {
       return 0
     })
     return list
-  }, [games, search, filterPlatform, filterStatus, filterPlatinum, sortBy])
+  }, [games, search, filterPlatform, filterStatus, filterPlatinum, filterGameStatus, sortBy])
 
   return (
     <div className="flex min-h-screen bg-[#080a0f]">
@@ -144,14 +146,11 @@ export default function GamesPage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search games…"
-                    className="w-full bg-[#0f1117] border border-white/8 rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-violet-500/60 transition-colors"
+                    className="w-full bg-[#0f1117] border border-white/[0.06] rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-violet-500/60 transition-colors"
                   />
                 </div>
-                <Button variant="default" onClick={() => setShowFilters((v) => !v)}>
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span className="hidden sm:inline">Filters</span>
-                </Button>
-                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-28 sm:w-36">
+                <label className="justify-content height-[20px] flex items-center">Order:</label>
+                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-28 sm:w-36 border border-white/[0.06]">
                   <option value="title">A → Z</option>
                   <option value="date">Newest</option>
                   <option value="completion">Completion</option>
@@ -159,28 +158,31 @@ export default function GamesPage() {
                 </Select>
               </div>
 
-              {showFilters && (
-                <div className="flex gap-2 flex-wrap p-4 bg-[#0f1117] border border-white/6 rounded-xl">
-                  <Select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="flex-1 min-w-[120px]">
-                    <option value="">All platforms</option>
-                    {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
-                  </Select>
-                  <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex-1 min-w-[140px]">
-                    <option value="">All statuses</option>
-                    {ACCOUNT_STATUSES.map((s) => <option key={s}>{s}</option>)}
-                  </Select>
-                  <Select value={filterPlatinum} onChange={(e) => setFilterPlatinum(e.target.value)} className="flex-1 min-w-[120px]">
-                    <option value="">Platinum: all</option>
-                    <option value="yes">Platinum only</option>
-                    <option value="no">No platinum</option>
-                  </Select>
-                  {(filterPlatform || filterStatus || filterPlatinum) && (
-                    <Button variant="ghost" size="sm" onClick={() => { setFilterPlatform(''); setFilterStatus(''); setFilterPlatinum('') }}>
-                      Clear
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div className="flex gap-2 flex-wrap p-4">
+                <label className="justify-content height-[20px] flex items-center">Filters:</label>
+                <Select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="flex-1 min-w-[120px] border border-white/[0.06]">
+                  <option value="">All platforms</option>
+                  {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
+                </Select>
+                <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex-1 min-w-[140px] border border-white/[0.06]">
+                  <option value="">All statuses</option>
+                  {ACCOUNT_STATUSES.map((s) => <option key={s}>{s}</option>)}
+                </Select>
+                <Select value={filterPlatinum} onChange={(e) => setFilterPlatinum(e.target.value)} className="flex-1 min-w-[120px] border border-white/[0.06]">
+                  <option value="">Platinum: all</option>
+                  <option value="yes">Platinum only</option>
+                  <option value="no">No platinum</option>
+                </Select>
+                <Select value={filterGameStatus} onChange={(e) => setFilterGameStatus(e.target.value)} className="flex-1 min-w-[140px] border border-white/[0.06]">
+                  <option value="">All game statuses</option>
+                  {GAME_STATUSES.map((s) => <option key={s}>{s}</option>)}
+                </Select>
+                {(filterPlatform || filterStatus || filterPlatinum || filterGameStatus) && (
+                  <Button variant="ghost" size="sm" onClick={() => { setFilterPlatform(''); setFilterStatus(''); setFilterPlatinum(''); setFilterGameStatus('') }}>
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
 
             {loading ? (
@@ -192,80 +194,46 @@ export default function GamesPage() {
               </div>
             ) : (
               <>
-                <div className="hidden md:block bg-[#0f1117] border border-white/6 rounded-xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-[11px] text-zinc-600 uppercase tracking-widest border-b border-white/6 bg-white/2">
-                          <th className="px-4 py-3 w-8" />
-                          <th className="text-left px-4 py-3 font-semibold">Game</th>
-                          <th className="text-left px-4 py-3 font-semibold">Platform</th>
-                          <th className="text-left px-4 py-3 font-semibold">Finished</th>
-                          <th className="text-left px-4 py-3 font-semibold">Status</th>
-                          <th className="text-left px-4 py-3 font-semibold w-40">Completion</th>
-                          <th className="px-4 py-3 w-20" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.map((g) => {
-                          const date = formatGameDate(g.date)
-                          return (
-                            <tr key={g.id} className="border-b border-white/4 hover:bg-white/2 transition-colors group">
-                              <td className="px-4 py-3 text-center w-8">
-                                {g.platinum && <span className="text-sm">🏆</span>}
-                              </td>
-                              <td className="px-4 py-3">
-                                <Link href={`/games/${g.id}`} className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors">
-                                  {g.title}
-                                </Link>
-                              </td>
-                              <td className="px-4 py-3 text-zinc-500">{g.platform}</td>
-                              <td className="px-4 py-3 text-zinc-500 tabular-nums">{date ?? <span className="text-zinc-700">—</span>}</td>
-                              <td className="px-4 py-3"><StatusBadge status={g.account_status} /></td>
-                              <td className="px-4 py-3 w-40"><CompletionBar value={g.completion} /></td>
-                              <td className="px-4 py-3">
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                                  <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setEditGame(g))}>
-                                    <Pencil className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setDeleteGame(g))}>
-                                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                        {filtered.length === 0 && (
-                          <tr><td colSpan={8} className="px-4 py-16 text-center text-zinc-600">No games found</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="md:hidden flex flex-col gap-2">
+                <div className="hidden md:block bg-[#0f1117] border border-white/[0.06] rounded-xl overflow-hidden">
                   {filtered.length === 0 && (
-                    <p className="text-center text-zinc-600 py-16">No games found</p>
+                    <p className="px-6 py-16 text-center text-zinc-600 text-sm">No games found</p>
                   )}
-                  {filtered.map((g) => {
+                  {filtered.map((g, i) => {
                     const date = formatGameDate(g.date)
                     return (
-                      <div key={g.id} className="bg-[#0f1117] border border-white/6 rounded-xl p-4">
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              {g.platinum && <span className="text-xs">🏆</span>}
-                              <Link href={`/games/${g.id}`} className="font-medium text-zinc-100 hover:text-violet-300 transition-colors leading-tight line-clamp-2">
-                                {g.title}
-                              </Link>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap mt-1">
-                              <span className="text-xs text-zinc-500">{g.platform}</span>
-                              {date && <span className="text-xs text-zinc-600">· {date}</span>}
-                            </div>
+                      <div
+                        key={g.id}
+                        className={`flex items-center gap-4 px-5 py-4 hover:bg-white/2 transition-colors group ${i !== 0 ? 'border-t border-white/[0.06]' : ''}`}
+                      >
+                        {/* Left: trophy + title + subtitle */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Link
+                              href={`/games/${g.id}`}
+                              className="font-semibold text-[15px] text-zinc-100 hover:text-violet-300 transition-colors leading-tight truncate"
+                            >
+                              {g.title}
+                            </Link>
                           </div>
-                          <div className="flex gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 mt-0.5">
+                            <span>{g.platform}</span>
+                            {g.account_status && <><span className="text-zinc-600">·</span><StatusBadge status={g.account_status} /></>}
+                            {date && <><span className="text-zinc-700">·</span><span>{date}</span></>}
+                          </div>
+                        </div>
+
+                        {/* Right: game status + completion */}
+                        <div className="flex items-center gap-4 shrink-0">
+                          {g.platinum && <span className="text-sm leading-none">🏆</span>}
+                          {g.game_status && (
+                            <span className="text-xs text-zinc-400 bg-zinc-800/60 border border-white/[0.06] px-2.5 py-0.5 rounded-md whitespace-nowrap">
+                              {g.game_status}
+                            </span>
+                          )}
+                          <div className="w-36">
+                            <CompletionBar value={g.completion} />
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setEditGame(g))}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
@@ -274,11 +242,53 @@ export default function GamesPage() {
                             </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <StatusBadge status={g.account_status} />
-                          <div className="flex-1">
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="md:hidden bg-[#0f1117] border border-white/[0.06] rounded-xl overflow-hidden">
+                  {filtered.length === 0 && (
+                    <p className="text-center text-zinc-600 py-16 text-sm">No games found</p>
+                  )}
+                  {filtered.map((g, i) => {
+                    const date = formatGameDate(g.date)
+                    return (
+                      <div key={g.id} className={`flex items-center gap-3 px-4 py-5 ${i !== 0 ? 'border-b border-white/[0.06]' : ''}`}>
+                        {/* Left */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <Link href={`/games/${g.id}`} className="font-semibold text-zinc-100 hover:text-violet-300 transition-colors leading-tight line-clamp-2">
+                              {g.title}
+                            </Link>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-0.5 text-xs text-zinc-500">
+                            <span>{g.platform}</span>
+                            {date && <><span className="text-zinc-700">·</span><span>{date}</span></>}
+                            {g.account_status && <><span className="text-zinc-700">·</span><StatusBadge status={g.account_status} /></>}
+                          </div>
+                        </div>
+                        {/* Right */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <div>
+                            {g.platinum && <span className="text-xs leading-none pr-2">🏆</span>}
+                            {g.game_status && (
+                            <span className="text-xs text-zinc-400 bg-zinc-800/60 border border-white/[0.06] px-2 py-0.5 rounded-md whitespace-nowrap">
+                              {g.game_status}
+                            </span>
+                            )}
+                          </div>
+                          <div className="w-28">
                             <CompletionBar value={g.completion} />
                           </div>
+                        </div>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setEditGame(g))}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => requireAuth(() => setDeleteGame(g))}>
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          </Button>
                         </div>
                       </div>
                     )

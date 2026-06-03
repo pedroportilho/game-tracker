@@ -55,15 +55,15 @@ export default async function BacklogPage() {
 
             {/* Summary cards — compactos no mobile */}
             <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-3 md:p-5">
+              <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
                 <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">To Recover</p>
                 <p className="text-2xl md:text-3xl font-display font-bold text-red-400">{backlog.length}</p>
               </div>
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-3 md:p-5">
+              <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
                 <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">Plats Lost</p>
                 <p className="text-2xl md:text-3xl font-display font-bold text-amber-400">{platinumCount}</p>
               </div>
-              <div className="bg-[#0f1117] border border-white/6 rounded-xl p-3 md:p-5">
+              <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
                 <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">Platforms</p>
                 <p className="text-2xl md:text-3xl font-display font-bold text-zinc-300">{Object.keys(byPlatform).length}</p>
               </div>
@@ -74,8 +74,8 @@ export default async function BacklogPage() {
               {Object.entries(byPlatform)
                 .sort(([, a], [, b]) => b.length - a.length)
                 .map(([platform, platformGames]) => (
-                  <div key={platform} className="bg-[#0f1117] border border-white/6 rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-white/6 bg-white/2">
+                  <div key={platform} className="bg-[#0f1117] border border-white/[0.06] rounded-xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-white/[0.06] bg-white/2">
                       <h2 className="font-display font-bold text-sm text-zinc-300 uppercase tracking-wide">{platform}</h2>
                       <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded-full">
                         {platformGames.length} game{platformGames.length !== 1 ? 's' : ''}
@@ -85,19 +85,20 @@ export default async function BacklogPage() {
                     <table className="hidden md:table w-full text-sm">
                       <tbody>
                         {platformGames.map((g) => (
-                          <tr key={g.id} className="border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors">
-                            <td className="px-5 py-3 w-8 text-center">
-                              {g.platinum && <span className="text-sm">🏆</span>}
-                            </td>
+                          <tr key={g.id} className="border-b border-white/[0.06] last:border-0 hover:bg-white/2 transition-colors">
+                            
                             <td className="px-5 py-3">
                               <Link href={`/games/${g.id}`} className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors">
                                 {g.title}
                               </Link>
                             </td>
+                            <td className="px-5 py-3 w-8 text-center">
+                              {g.platinum && <span className="text-sm">🏆</span>}
+                            </td>
                             <td className="px-5 py-3 w-48">
                               <CompletionBar value={g.completion} />
                             </td>
-                            <td className="px-5 py-3 text-xs text-zinc-700 max-w-xs truncate">
+                            <td className="px-5 py-3 text-xs text-zinc-200 max-w-xs truncate">
                               {g.notes}
                             </td>
                           </tr>
@@ -113,7 +114,7 @@ export default async function BacklogPage() {
                             <span className="text-sm text-zinc-200 font-medium">{g.title}</span>
                           </div>
                           <CompletionBar value={g.completion} />
-                          {g.notes && <p className="text-xs text-zinc-600 mt-1.5 line-clamp-2">{g.notes}</p>}
+                          {g.notes && <p className="text-xs text-zinc-200 mt-1.5 line-clamp-2">{g.notes}</p>}
                         </div>
                       ))}
                     </div>
