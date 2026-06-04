@@ -1,7 +1,7 @@
 ﻿// Dashboard page dependencies and reusable UI components
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
-import { StatCard } from '@/components/ui'
+import { CompletionBar, StatCard } from '@/components/ui'
 import { AuthPrompt } from '@/components/AuthPrompt'
 import { getGames } from '@/lib/supabase'
 import { getUserFromCookies } from '@/lib/auth'
@@ -23,20 +23,20 @@ async function getDashboardData(userId: string) {
     : 0
   const platCount = games.filter((g) => g.platinum).length
   const platRate = total ? platCount / total : 0
-  const lostCount = games.filter((g) => g.account_status === 'Lost Account').length
+  const lostCount = games.filter((g) => g.account_status === 'Lost').length
   const preservedCount = games.filter((g) => g.account_status === 'Preserved').length
   const reEarnedCount = games.filter((g) => g.account_status === 'Re-earned').length
-  const completed = games.filter((g) => g.completion === 1).length
+  const unverifiedCount = games.filter((g) => g.account_status === 'Unverified').length
+  const completed = games.filter((g) => g.game_status === 'Completed').length
 
-  const buckets = { '0–25%': 0, '26–50%': 0, '51–75%': 0, '76–99%': 0, '100%': 0, 'No data': 0 }
+  const buckets = { 'Dropped': 0, 'On Hold': 0, 'Playing': 0, 'Completed': 0, 'Backlog': 0 }
   for (const g of games) {
-    if (g.completion == null) { buckets['No data']++; continue }
-    const p = g.completion * 100
-    if (p <= 25) buckets['0–25%']++
-    else if (p <= 50) buckets['26–50%']++
-    else if (p <= 75) buckets['51–75%']++
-    else if (p < 100) buckets['76–99%']++
-    else buckets['100%']++
+    const p = g.game_status;
+    if (p === "Backlog") buckets['Backlog']++
+    else if (p === "Dropped") buckets['Dropped']++
+    else if (p === "On Hold") buckets['On Hold']++
+    else if (p === "Playing") buckets['Playing']++
+    else if (p === "Completed") buckets['Completed']++
   }
 
   const genreMap: Record<string, { finished: number; platinum: number }> = {}
@@ -75,7 +75,8 @@ async function getDashboardData(userId: string) {
   return {
     total, avgCompletion, platRate, platCount,
     lostCount, preservedCount, reEarnedCount,
-    completed, buckets, genreStats, platformStats, recent,
+    completed, buckets, genreStats, platformStats, 
+    recent, unverifiedCount,
   }
 }
 
@@ -133,12 +134,16 @@ export default async function DashboardPage() {
                     <p className={`${styles.statusValue} ${styles.statusValueGreen}`}>{d.preservedCount}</p>
                   </div>
                   <div className={styles.statusCard}>
-                    <p className={styles.statusLabel}>Lost accounts</p>
-                    <p className={`${styles.statusValue} ${styles.statusValueRed}`}>{d.lostCount}</p>
-                  </div>
-                  <div className={styles.statusCard}>
                     <p className={styles.statusLabel}>Re-earned</p>
                     <p className={`${styles.statusValue} ${styles.statusValueBlue}`}>{d.reEarnedCount}</p>
+                  </div>
+                  <div className={styles.statusCard}>
+                    <p className={styles.statusLabel}>Unverified</p>
+                    <p className={`${styles.statusValue} ${styles.statusValueZinc}`}>{d.unverifiedCount}</p>
+                  </div>
+                  <div className={styles.statusCard}>
+                    <p className={styles.statusLabel}>Lost</p>
+                    <p className={`${styles.statusValue} ${styles.statusValueRed}`}>{d.lostCount}</p>
                   </div>
                 </div>
               </div>
@@ -148,18 +153,22 @@ export default async function DashboardPage() {
             <section className={styles.gridTwoColumns}>
               <div className={styles.chartCard}>
                 <div className={styles.chartHeader}>
-                  <p className={styles.sectionTitle}>Completion distribution</p>
+                  <p className={styles.sectionTitle}>Status distribution</p>
                 </div>
                 <div className={styles.chartGroup}>
-                  {Object.entries(d.buckets).map(([label, count]) => (
-                    <div key={label} className={styles.chartItem}>
-                      <div className={styles.chartLabel}>{label}</div>
-                      <div className={styles.chartBar}>
-                        <div className={styles.chartBarFill} style={{ width: `${Math.min(100, Math.max(5, d.total ? (count / d.total) * 100 : 0))}%` }} />
+                  {Object.entries(d.buckets).map(([label, count]) => {
+                    const percent = (count / d.total);
+                    
+                    return (
+                      <div key={label} className={styles.chartItem}>
+                        <div className={styles.chartLabel}>{label}</div>
+                        <div className={styles.chartBar}>
+                          <CompletionBar value={percent} showLabel={false} />
+                        </div>
+                        <div className={styles.chartValue}>{count}</div>
                       </div>
-                      <div className={styles.chartValue}>{count}</div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
@@ -177,8 +186,6 @@ export default async function DashboardPage() {
                             <div className={styles.chartBarFill} style={{ width: `${width}%` }} />
                           </div>
                           <div className={styles.chartValue}>{platform.count}</div>
-
-
                       </div>
                     )
                   })}

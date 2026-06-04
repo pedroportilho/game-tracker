@@ -3,6 +3,7 @@ export const PLATFORMS = [
   'PS2','PS3','PS4','PS5','PSP','PSVita','PSX',
   'SNES','Steam','Switch','Wii','WiiU','Windows',
   'Xbox 360','Xbox ONE','Xbox PC','Xbox Series',
+  'Epic', 'GOG'
 ]
 
 export const ACCOUNT_STATUSES = [
