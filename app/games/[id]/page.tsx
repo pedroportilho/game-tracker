@@ -46,7 +46,6 @@ export default async function GameDetailPage({ params }) {
   const igdb = await fetchIgdb(game.igdb_id)
   const cover = igdbImageUrl(igdb?.cover?.url, 'cover_big')
   const summary = igdb?.summary
-  const igdbGenres = (igdb?.genres ?? []).map((g) => g.name)
   const igdbPlatforms = (igdb?.platforms ?? []).map((p) => p.name || p.abbreviation).filter(Boolean)
   const releaseDate = igdb?.first_release_date
     ? new Date(igdb.first_release_date * 1000).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
@@ -126,7 +125,7 @@ export default async function GameDetailPage({ params }) {
 
                 {game.genres.length > 0 && (
                   <div>
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Your genres</p>
+                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Genres</p>
                     <div className="flex flex-wrap gap-1.5">
                       {game.genres.map((g) => (
                         <span key={g} className="px-2 py-0.5 rounded-md text-xs bg-violet-900/30 text-violet-300 border border-violet-700/30">

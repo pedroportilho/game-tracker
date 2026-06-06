@@ -237,6 +237,10 @@
   padding: 1.5rem;
 }
 
+.recentSection {
+  overflow: hidden;
+}
+
 .sectionTitle {
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
