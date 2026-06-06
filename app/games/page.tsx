@@ -7,7 +7,7 @@ import { MobileHeader } from '@/components/layout/Sidebar'
 import { StatusBadge, CompletionBar, Button, Modal, Select } from '@/components/ui'
 import { GameForm } from '@/components/GameForm'
 import { PLATFORMS, ACCOUNT_STATUSES, GAME_STATUSES, formatGameDate } from '@/lib/constants'
-import { Pencil, Trash2, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { Pencil, Trash2, Plus, Search} from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 
 export default function GamesPage() {
@@ -161,20 +161,20 @@ export default function GamesPage() {
               <div className="flex gap-2 flex-wrap p-4">
                 <label className="justify-content height-[20px] flex items-center">Filters:</label>
                 <Select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="flex-1 min-w-[120px] border border-white/[0.06]">
-                  <option value="">All platforms</option>
+                  <option value="">Platform</option>
                   {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
                 </Select>
                 <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex-1 min-w-[140px] border border-white/[0.06]">
-                  <option value="">All statuses</option>
+                  <option value="">Account Status</option>
                   {ACCOUNT_STATUSES.map((s) => <option key={s}>{s}</option>)}
                 </Select>
                 <Select value={filterPlatinum} onChange={(e) => setFilterPlatinum(e.target.value)} className="flex-1 min-w-[120px] border border-white/[0.06]">
-                  <option value="">Platinum: all</option>
-                  <option value="yes">Platinum only</option>
-                  <option value="no">No platinum</option>
+                  <option value="">Platinum: All</option>
+                  <option value="yes">Platinum</option>
+                  <option value="no">No Platinum</option>
                 </Select>
                 <Select value={filterGameStatus} onChange={(e) => setFilterGameStatus(e.target.value)} className="flex-1 min-w-[140px] border border-white/[0.06]">
-                  <option value="">All game statuses</option>
+                  <option value="">Game Status</option>
                   {GAME_STATUSES.map((s) => <option key={s}>{s}</option>)}
                 </Select>
                 {(filterPlatform || filterStatus || filterPlatinum || filterGameStatus) && (

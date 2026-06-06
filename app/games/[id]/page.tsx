@@ -55,6 +55,7 @@ export default async function GameDetailPage({ params }) {
   const companies = igdb?.involved_companies ?? []
   const developers = companies.filter((c) => c.developer).map((c) => c.company?.name).filter(Boolean)
   const publishers = companies.filter((c) => c.publisher).map((c) => c.company?.name).filter(Boolean)
+  console.log(igdb.cover)
 
   return (
     <div className="flex min-h-screen bg-[#080a0f]">

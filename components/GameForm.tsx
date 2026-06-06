@@ -17,6 +17,8 @@ type GameFormState = {
   genres: string[]
   notes: string
   igdb_id: number | null
+  cover: string | null
+  themes: string[]
 }
 
 type GameFormErrors = {
@@ -54,6 +56,8 @@ const EMPTY: GameFormState = {
   title: '', platform: '', date: '', platinum: false,
   completion: '', account_status: 'Preserved', game_status: 'Backlog', genres: [], notes: '',
   igdb_id: null,
+  cover: null,
+  themes: [],
 }
 
 // Converte "May 2024" → "2024-05-01" para popular o <input type="date">
@@ -74,7 +78,6 @@ function validate(form: GameFormState) {
   if (!form.title.trim()) e.title = 'Required'
   if (!form.platform) e.platform = 'Required'
   if (!form.account_status) e.account_status = 'Required'
-  if (form.genres.length === 0) e.genres = 'Select at least one'
   if (form.completion !== '' && (isNaN(Number(form.completion)) || Number(form.completion) < 0 || Number(form.completion) > 100))
     e.completion = '0–100'
   return e
@@ -206,6 +209,8 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormP
       genres:         Array.isArray(initialData.genres) ? initialData.genres : [],
       notes:          initialData.notes ?? '',
       igdb_id:        initialData.igdb_id ?? null,
+      cover:          initialData.cover ?? null,
+      themes:         Array.isArray(initialData.themes) ? initialData.themes : [],
     }
   })
   const [errors, setErrors] = useState<GameFormErrors>({})
@@ -228,6 +233,8 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormP
         igdb_id: result.id,           // número, não string
         title:   data?.name ?? result.name ?? f.title,
         genres:  data?.genres ? mapIgdbGenres(data.genres) : f.genres,
+        cover:     data?.cover ?? f.cover,
+        themes:    data?.themes ?? f.themes,
       }))
     } catch {
       setForm((f) => ({
@@ -256,6 +263,8 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormP
       genres:         form.genres,
       notes:          form.notes.trim() || null,
       igdb_id:        form.igdb_id ?? null,
+      cover:          form.cover ?? null,
+      themes:         form.themes,
     })
   }
 
@@ -293,26 +302,6 @@ export function GameForm({ initialData, onSubmit, onCancel, loading }: GameFormP
             className="w-4 h-4 accent-violet-500 rounded" />
           <span className="text-sm text-zinc-300">🏆 Platinum / 100%</span>
         </label>
-      </div>
-
-
-
-      <div>
-        <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-2">
-          Genres {errors.genres && <span className="text-red-400 normal-case ml-1">{errors.genres}</span>}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {GENRES.map((g) => (
-            <button key={g} type="button" onClick={() => toggleGenre(g)}
-              className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
-                form.genres.includes(g)
-                  ? 'bg-violet-700/60 text-violet-200 border border-violet-500/40'
-                  : 'bg-zinc-800/60 text-zinc-500 hover:bg-zinc-700/60 border border-transparent'
-              }`}>
-              {g}
-            </button>
-          ))}
-        </div>
       </div>
 
       <Input label="Notes" value={form.notes} onChange={(e) => set('notes', e.target.value)}

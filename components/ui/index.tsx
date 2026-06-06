@@ -42,7 +42,6 @@ type StatCardProps = {
 
 // ── Badge ────────────────────────────────────────────────────────────────────
 export function StatusBadge({ status }: StatusBadgeProps) {
-  console.log(JSON.stringify(status)) // ← adicione isso
   const s = STATUS_STYLES[status] ?? { bg: 'bg-zinc-800', text: 'text-zinc-400', border: 'border-zinc-700/30' }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${s.bg} ${s.text} ${s.border}`}>

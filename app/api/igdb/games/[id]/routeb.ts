@@ -19,7 +19,6 @@ export async function GET(request, { params }) {
         : null,
       cover: igdbImageUrl(game.cover?.url, 'cover_big'),
       genres: (game.genres ?? []).map((g) => g.name),
-      themes: (game.themes ?? []).map((t) => t.name),
       platforms: (game.platforms ?? []).map((p) => p.name || p.abbreviation).filter(Boolean),
       developers: companies.filter((c) => c.developer).map((c) => c.company?.name).filter(Boolean),
       publishers: companies.filter((c) => c.publisher).map((c) => c.company?.name).filter(Boolean),

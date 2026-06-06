@@ -13,6 +13,8 @@ export type Game = {
   genres: string[]
   notes: string | null
   igdb_id: number | null
+  themes: string[]
+  cover: string | null
 }
 
 export type SeriesEntry = {

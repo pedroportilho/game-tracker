@@ -70,6 +70,7 @@ export async function getGame(id) {
       id, name, summary, storyline, first_release_date, url,
       cover.url,
       genres.name,
+      themes.name,
       platforms.abbreviation, platforms.name,
       involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
     where id = ${numId};

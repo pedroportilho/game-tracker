@@ -6,7 +6,7 @@ import { AuthPrompt } from '@/components/AuthPrompt'
 import { getGames } from '@/lib/supabase'
 import { getUserFromCookies } from '@/lib/auth'
 import { formatGameDate } from '@/lib/constants'
-import { StatusBadge } from '@/components/ui'
+import { RecentCarousel } from '@/components/RecentCarousel'
 import styles from './dashboard.module.css'
 
 // Force the page to be rendered dynamically for each request
@@ -50,7 +50,20 @@ async function getDashboardData(userId: string) {
 
   const genreStats = Object.entries(genreMap)
     .map(([genre, s]) => ({ genre, finished: s.finished, platinum: s.platinum, rate: s.finished ? s.platinum / s.finished : 0 }))
-    .sort((a, b) => b.finished - a.finished)
+    .sort((a, b) => b.finished - a.finished).slice(0, 5)
+
+  const themeMap: Record<string, { finished: number; platinum: number }> = {}
+  for (const g of games) {
+    for (const theme of (g.themes ?? [])) {
+      if (!themeMap[theme]) themeMap[theme] = { finished: 0, platinum: 0 }
+      themeMap[theme].finished++
+      if (g.platinum) themeMap[theme].platinum++
+    }
+  }
+
+  const themeStats = Object.entries(themeMap)
+    .map(([theme, s]) => ({ theme, finished: s.finished, platinum: s.platinum, rate: s.finished ? s.platinum / s.finished : 0 }))
+    .sort((a, b) => b.finished - a.finished).slice(0, 5)
 
   const platformMap: Record<string, number> = {}
   for (const g of games) {
@@ -60,7 +73,7 @@ async function getDashboardData(userId: string) {
   const platformStats = Object.entries(platformMap)
     .map(([platform, count]) => ({ platform, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10)
+    .slice(0, 7)
 
   // Recent activity is sorted by date descending and limited for the dashboard view
   const recent = games
@@ -75,7 +88,7 @@ async function getDashboardData(userId: string) {
   return {
     total, avgCompletion, platRate, platCount,
     lostCount, preservedCount, reEarnedCount,
-    completed, buckets, genreStats, platformStats, 
+    completed, buckets, genreStats, themeStats, platformStats, 
     recent, unverifiedCount,
   }
 }
@@ -148,6 +161,12 @@ export default async function DashboardPage() {
                 </div>
               </div>
 
+                          {/* Recent activity timeline shown prior to genre details */}
+            <section className={styles.recentSection}>
+              <p className={styles.sectionTitle}>Recent activity</p>
+              <RecentCarousel games={d.recent} />
+            </section>
+
 
             {/* Distribution and platform visualizations */}
             <section className={styles.gridTwoColumns}>
@@ -180,7 +199,6 @@ export default async function DashboardPage() {
                     const width = Math.round((platform.count / maxCount) * 100)
                     return (
                       <div key={platform.platform} className={styles.chartItem}>
-
                           <div className={styles.chartLabel}>{platform.platform}</div>
                           <div className={styles.chartBar}>
                             <div className={styles.chartBarFill} style={{ width: `${width}%` }} />
@@ -192,25 +210,10 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </section>
-
-            {/* Recent activity timeline shown prior to genre details */}
-            <section className={styles.recentSection}>
-              <p className={styles.sectionTitle}>Recent activity</p>
-              <div className={styles.recentList}>
-                {d.recent.map((game) => (
-                  <div key={game.id} className={styles.recentItem}>
-                    <div className={styles.recentText}>
-                      <p className={styles.recentTitle}>{game.title}</p>
-                      <p className={styles.recentMeta}>{game.platform} · {formatGameDate(game.date)}</p>
-                    </div>
-                    <StatusBadge status={game.account_status} />
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Genre breakdown table shown after recent activity */}
-            <section className={styles.genreSection}>
+            
+            {/* Genre and theme breakdown tables side by side */}
+            <section className={styles.gridTwoColumns}>
+              <div className={styles.genreSection}>
               <div className={styles.chartHeader}>
                 <p className={styles.sectionTitle}>Genre Breakdown</p>
               </div>
@@ -232,7 +235,37 @@ export default async function DashboardPage() {
                   ))}
                 </div>
               </div>
+            </div>
+
+              <div className={styles.genreSection}>
+                <div className={styles.chartHeader}>
+                  <p className={styles.sectionTitle}>Theme Breakdown</p>
+                </div>
+                <div className={styles.genreTable}>
+                  <div className={styles.genreHeader}>
+                    <span>Theme</span>
+                    <span className={styles.genreCellRight}>Games</span>
+                    <span className={styles.genreCellRight}>Platinum</span>
+                    <span className={styles.genreCellRight}>Plat rate</span>
+                  </div>
+                  <div>
+                    {d.themeStats.map((t) => (
+                      <div key={t.theme} className={styles.genreRow}>
+                        <span>{t.theme}</span>
+                        <span className={styles.genreCellRight}>{t.finished}</span>
+                        <span className={styles.genreCellRight}>{Math.round(t.platinum)}</span>
+                        <span className={styles.genreCellRate}>{Math.round(t.rate * 100)}%</span>
+                      </div>
+                    ))}
+                    {d.themeStats.length === 0 && (
+                      <p className="text-xs text-zinc-600 py-3">No theme data yet</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </section>
+
+
           </div>
         </main>
       </div>
