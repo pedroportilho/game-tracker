@@ -1,4 +1,4 @@
-﻿import Link from 'next/link'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
@@ -7,7 +7,7 @@ import { getGameById } from '@/lib/supabase'
 import { getGame, igdbImageUrl } from '@/lib/igdb'
 import { getUserFromCookies } from '@/lib/auth'
 import { formatGameDate } from '@/lib/constants'
-import { ArrowLeft, ExternalLink, Calendar, Trophy } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Calendar, Trophy, Monitor, Users, Pencil, Tag, FileText } from 'lucide-react'
 import { GameEditButton } from '@/components/GameEditButton'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +20,22 @@ async function fetchIgdb(igdbId) {
     console.error('IGDB fetch failed:', e)
     return null
   }
+}
+
+function SectionLabel({ children }) {
+  return (
+    <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-2">
+      {children}
+    </p>
+  )
+}
+
+function InfoCard({ children, className = '' }) {
+  return (
+    <div className={`rounded-xl bg-[#0f1117] border border-white/[0.06] p-4 ${className}`}>
+      {children}
+    </div>
+  )
 }
 
 export default async function GameDetailPage({ params }) {
@@ -47,6 +63,7 @@ export default async function GameDetailPage({ params }) {
   const cover = igdbImageUrl(igdb?.cover?.url, 'cover_big')
   const summary = igdb?.summary
   const igdbPlatforms = (igdb?.platforms ?? []).map((p) => p.name || p.abbreviation).filter(Boolean)
+  const igdbThemes = (igdb?.themes ?? []).map((t) => t.name).filter(Boolean)
   const releaseDate = igdb?.first_release_date
     ? new Date(igdb.first_release_date * 1000).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
     : null
@@ -54,7 +71,6 @@ export default async function GameDetailPage({ params }) {
   const companies = igdb?.involved_companies ?? []
   const developers = companies.filter((c) => c.developer).map((c) => c.company?.name).filter(Boolean)
   const publishers = companies.filter((c) => c.publisher).map((c) => c.company?.name).filter(Boolean)
-  console.log(igdb.cover)
 
   return (
     <div className="flex min-h-screen bg-[#080a0f]">
@@ -64,9 +80,10 @@ export default async function GameDetailPage({ params }) {
         <MobileHeader title={game.title} />
 
         <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-5xl mx-auto">
+          <div className="w-full">
 
-            <div className="flex items-center justify-between mb-6">
+            {/* Top nav */}
+            <div className="flex items-center justify-between mb-8">
               <Link
                 href="/games"
                 className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-200 transition-colors"
@@ -76,111 +93,183 @@ export default async function GameDetailPage({ params }) {
               <GameEditButton game={game} />
             </div>
 
-            <div className="flex flex-col md:grid md:grid-cols-[200px_1fr] gap-5 md:gap-8 mb-6 md:mb-8">
+            {/* Hero: cover + title block */}
+            <div className="flex flex-col md:grid md:grid-cols-[240px_1fr] gap-6 md:gap-10 mb-10">
+
+              {/* Cover */}
               <div className="flex justify-center md:block">
                 {cover ? (
                   <img
                     src={cover}
                     alt={game.title}
-                    className="w-36 md:w-full rounded-xl border border-white/8 shadow-2xl"
+                    className="w-40 md:w-full rounded-2xl border border-white/8 shadow-2xl"
                   />
                 ) : (
-                  <div className="w-36 md:w-full aspect-[3/4] rounded-xl bg-[#0f1117] border border-white/8 flex items-center justify-center text-zinc-700 text-xs text-center px-3">
+                  <div className="w-40 md:w-full aspect-[3/4] rounded-2xl bg-[#0f1117] border border-white/8 flex items-center justify-center text-zinc-700 text-xs text-center px-3">
                     {game.igdb_id ? 'No cover available' : 'Not linked to IGDB'}
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col gap-4">
+              {/* Title + status + completion */}
+              <div className="flex flex-col gap-5">
                 <div>
                   <p className="text-xs text-zinc-600 mb-1 tracking-widest uppercase">{game.id}</p>
                   <h1 className="font-display font-bold text-2xl md:text-4xl text-zinc-100 mb-2 leading-tight">
                     {game.title}
-                    {game.platinum && <span className="ml-3 text-xl md:text-2xl align-middle">🏆</span>}
+                    {game.platinum && <span className="ml-3 text-2xl md:text-3xl align-middle">🏆</span>}
                   </h1>
-                  <div className="flex items-center gap-2 flex-wrap text-sm">
-                    <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700/40 text-xs">
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700/40 text-xs font-medium">
                       {game.platform}
                     </span>
                     <StatusBadge status={game.account_status} />
-                    {game.date && (
-                      <span className="inline-flex items-center gap-1 text-zinc-500 text-xs">
-                        <Calendar className="w-3 h-3" /> {formatGameDate(game.date)}
-                      </span>
-                    )}
                     {game.platinum && (
-                      <span className="inline-flex items-center gap-1 text-amber-400 text-xs">
-                        <Trophy className="w-3 h-3" /> Platinum
+                      <span className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-medium">
+                        <Trophy className="w-3.5 h-3.5" /> Platinum
+                      </span>
+                    )}
+                    {game.date && (
+                      <span className="inline-flex items-center gap-1.5 text-zinc-500 text-xs">
+                        <Calendar className="w-3.5 h-3.5" /> {formatGameDate(game.date)}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {game.completion != null && (
-                  <div className="max-w-sm">
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Completion</p>
-                    <CompletionBar value={game.completion} />
-                  </div>
-                )}
-
-                {game.genres.length > 0 && (
-                  <div>
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">Genres</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {game.genres.map((g) => (
-                        <span key={g} className="px-2 py-0.5 rounded-md text-xs bg-violet-900/30 text-violet-300 border border-violet-700/30">
-                          {g}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {summary && (
-                  <div className="space-y-3">
-                    <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1.5">IGDB summary</p>
-                    <p className="text-sm leading-relaxed text-zinc-300">{summary}</p>
-                  </div>
-                )}
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {releaseDate && (
-                    <div className="rounded-xl bg-[#0f1117] border border-white/6 p-4">
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Released</p>
-                      <p className="text-sm text-zinc-100">{releaseDate}</p>
+                <div className="flex flex-col gap-4 max-w-2xl md:flex-row">
+                  {/* Completion */}
+                  {game.completion != null && (
+                    <div className='w-full md:w-[80%]'>
+                      <SectionLabel>Completion</SectionLabel>
+                      <CompletionBar value={game.completion} />
                     </div>
                   )}
 
-                  {igdbPlatforms.length > 0 && (
-                    <div className="rounded-xl bg-[#0f1117] border border-white/6 p-4">
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">IGDB platforms</p>
-                      <p className="text-sm text-zinc-100">{igdbPlatforms.join(', ')}</p>
+                  {/* IGDB link */}
+                  {igdbUrl && (
+                    <div className='flex w-[50%] justify-start md:justify-end'>
+                      <Link
+                        href={igdbUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-1 text-sm font-semibold text-white hover:bg-violet-500 transition"
+                      >
+                        <ExternalLink className="w-4 h-4" /> View on IGDB
+                      </Link>
+                    </div>
+                )}
+                </div>
+
+                {/* User Notes */}
+                {game.notes && (
+                  <div className="max-w-2xl">
+                    <InfoCard>
+                      <SectionLabel>Notes</SectionLabel>
+                      <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">{game.notes}</p>
+                    </InfoCard>
+                  </div>
+                )}
+
+                {/* Genres + Themes */}
+                <div className="flex flex-col md:flex-row gap-3">
+                  {game.genres?.length > 0 && (
+                    <div className='w-full md:w-[50%]'>
+                      <SectionLabel>Genres</SectionLabel>
+                      <div className="flex flex-wrap gap-1.5">
+                        {game.genres.map((g) => (
+                          <span key={g} className="px-2.5 py-1 rounded-lg text-xs bg-violet-900/30 text-violet-300 border border-violet-700/30 font-medium">
+                            {g}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {igdbThemes.length > 0 && (
+                    <div>
+                      <SectionLabel>Themes</SectionLabel>
+                      <div className="flex flex-wrap gap-1.5">
+                        {igdbThemes.map((t) => (
+                          <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-sky-900/25 text-sky-300 border border-sky-700/25 font-medium">
+                            <Tag className="w-3 h-3" />{t}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
-
-                {igdbUrl && (
-                  <Link href={igdbUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 transition">
-                    <ExternalLink className="w-4 h-4" /> View on IGDB
-                  </Link>
-                )}
-
-                {developers.length > 0 && (
-                  <div>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Developers</p>
-                    <p className="text-sm text-zinc-100">{developers.join(', ')}</p>
-                  </div>
-                )}
-
-                {publishers.length > 0 && (
-                  <div>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Publishers</p>
-                    <p className="text-sm text-zinc-100">{publishers.join(', ')}</p>
-                  </div>
-                )}
               </div>
             </div>
 
+            {/* Divider */}
+            <div className="border-t border-white/[0.06] mb-8" />
+            
+            {/* Summary */}
+              {summary && (
+                <div className="mb-8 max-w-5xl">
+                  <InfoCard>
+                    <SectionLabel>Summary</SectionLabel>
+                    <p className="text-sm leading-relaxed text-zinc-400">{summary}</p>
+                  </InfoCard>
+                </div>
+            )}
+
+            <div className="flex flex-col md:flex-row max-w-5xl gap-4">
+            {/* Info grid */}
+              <div className="w-full md:w-[35%]">
+                  <InfoCard>
+                    {releaseDate && (
+                      <div>
+                        <SectionLabel>Released</SectionLabel>
+                        <p className="text-sm text-zinc-100 font-medium mb-2">{releaseDate}</p>
+                        <div className="border-t border-white/[0.06] mb-2" />
+                      </div>
+                    )}
+
+                    {developers.length > 0 && (
+                      <div>
+                        <SectionLabel>Developer{developers.length > 1 ? 's' : ''}</SectionLabel>
+                        <div className="flex flex-col gap-1 mb-2">
+                          {developers.map((d) => (
+                            <p key={d} className="text-sm text-zinc-100">{d}</p>
+                          ))}
+                        </div>
+                        <div className="border-t border-white/[0.06] mb-2" />
+                      </div>
+                    )}
+
+                    {publishers.length > 0 && (
+                      <div>
+                        <SectionLabel>Publisher{publishers.length > 1 ? 's' : ''}</SectionLabel>
+                        <div className="flex flex-col gap-1 mb-2">
+                          {publishers.map((p) => (
+                            <p key={p} className="text-sm text-zinc-100">{p}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </InfoCard>
+              </div>
+
+              {/* Platforms */}
+              {igdbPlatforms.length > 0 && (
+                <div className="w-full md:w-[60%]">
+                  <InfoCard className="h-full">
+                    <SectionLabel>Available on</SectionLabel>
+                    <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                      {igdbPlatforms.map((platform) => (
+                        <li key={platform} className="flex items-center gap-2 text-sm text-zinc-300">
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
+                          {platform}
+                        </li>
+                      ))}
+                    </ul>
+                  </InfoCard>
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>

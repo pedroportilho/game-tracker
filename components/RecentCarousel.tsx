@@ -29,19 +29,29 @@ export function RecentCarousel({ games }: Props) {
               style={{ aspectRatio: '3 / 4' }}
             >
               {game.cover ? (
-                <img
-                  src={game.cover}
-                  alt={game.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+                <a href={`/games/${game.id}`} className="absolute inset-0">
+                  <img
+                    src={game.cover}
+                    alt={game.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </a>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-zinc-600 text-xs text-center px-2">{game.title}</span>
+                  <span className="text-zinc-600 text-xs text-center px-2">
+                    <a href={`/games/${game.id}`} className="hover:underline">
+                      {game.title}
+                    </a>
+                  </span>
                 </div>
               )}
             </div>
 
-            <p className="text-xs font-semibold text-zinc-200 truncate leading-snug">{game.title}</p>
+            <p className="text-xs font-semibold text-zinc-200 truncate leading-snug">
+              <a href={`/games/${game.id}`} className="hover:underline">
+                {game.title}
+              </a>
+            </p>
             <p className="text-[11px] text-zinc-600 mt-0.5 truncate">{game.platform} · {formatGameDate(game.date)}</p>
           </div>
         ))}
