@@ -80,7 +80,7 @@ export default async function GameDetailPage({ params }) {
         <MobileHeader title={game.title} />
 
         <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="w-full">
+          <div className="w-full md:max-w-5xl mx-auto">
 
             {/* Top nav */}
             <div className="flex items-center justify-between mb-8">
@@ -138,7 +138,7 @@ export default async function GameDetailPage({ params }) {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4 max-w-2xl md:flex-row">
+                <div className="flex flex-col gap-4 md:flex-row">
                   {/* Completion */}
                   {game.completion != null && (
                     <div className='w-full md:w-[80%]'>
@@ -149,7 +149,7 @@ export default async function GameDetailPage({ params }) {
 
                   {/* IGDB link */}
                   {igdbUrl && (
-                    <div className='flex w-[50%] justify-start md:justify-end'>
+                    <div className='flex w-[40%] justify-start md:justify-end'>
                       <Link
                         href={igdbUrl}
                         target="_blank"
@@ -164,7 +164,7 @@ export default async function GameDetailPage({ params }) {
 
                 {/* User Notes */}
                 {game.notes && (
-                  <div className="max-w-2xl">
+                  <div >
                     <InfoCard>
                       <SectionLabel>Notes</SectionLabel>
                       <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">{game.notes}</p>
@@ -208,7 +208,7 @@ export default async function GameDetailPage({ params }) {
             
             {/* Summary */}
               {summary && (
-                <div className="mb-8 max-w-5xl">
+                <div className="mb-8">
                   <InfoCard>
                     <SectionLabel>Summary</SectionLabel>
                     <p className="text-sm leading-relaxed text-zinc-400">{summary}</p>
@@ -216,9 +216,9 @@ export default async function GameDetailPage({ params }) {
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row max-w-5xl gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
             {/* Info grid */}
-              <div className="w-full md:w-[35%]">
+              <div className="w-full md:w-[45%]">
                   <InfoCard>
                     {releaseDate && (
                       <div>
