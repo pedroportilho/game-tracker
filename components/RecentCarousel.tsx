@@ -15,16 +15,19 @@ export function RecentCarousel({ games }: Props) {
     <div className="min-w-0 overflow-hidden">
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 scroll-smooth"
+        className="flex gap-2 items-start overflow-x-auto pb-2 scroll-smooth"
         style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
       >
         {games.map((game) => (
           <div
             key={game.id}
-            className="flex-none w-32 group"
+            className="group flex-none"
+            style={{ width: '160px' }}
           >
-            {/* Cover */}
-            <div className="w-32 h-44 rounded-xl overflow-hidden bg-zinc-800 border border-white/8 mb-2.5 relative">
+            <div
+              className="rounded-xl overflow-hidden bg-zinc-800 border border-white/8 mb-2 relative w-full"
+              style={{ aspectRatio: '3 / 4' }}
+            >
               {game.cover ? (
                 <img
                   src={game.cover}
@@ -38,9 +41,8 @@ export function RecentCarousel({ games }: Props) {
               )}
             </div>
 
-            {/* Info */}
             <p className="text-xs font-semibold text-zinc-200 truncate leading-snug">{game.title}</p>
-            <p className="text-[11px] text-zinc-600 mt-0.5 truncate">{game.platform} - {formatGameDate(game.date)}</p>
+            <p className="text-[11px] text-zinc-600 mt-0.5 truncate">{game.platform} · {formatGameDate(game.date)}</p>
           </div>
         ))}
       </div>
