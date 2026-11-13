@@ -1,32 +1,32 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button, Modal } from '@/components/ui'
-import { GameForm } from '@/components/GameForm'
-import { Pencil } from 'lucide-react'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button, Modal } from "@/components/ui";
+import { GameForm } from "@/components/GameForm";
+import { Pencil } from "lucide-react";
 
 export function GameEditButton({ game }) {
-  const [open, setOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const router = useRouter()
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
 
   async function handleEdit(data) {
-    setSaving(true)
+    setSaving(true);
     try {
       const res = await fetch(`/api/games/${game.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error('Failed to update game')
-      setOpen(false)
+      });
+      if (!res.ok) throw new Error("Failed to update game");
+      setOpen(false);
       // Revalida a página para mostrar os dados atualizados
-      router.refresh()
+      router.refresh();
     } catch (e) {
-      alert(e.message)
+      alert(e.message);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -46,5 +46,5 @@ export function GameEditButton({ game }) {
         />
       </Modal>
     </>
-  )
+  );
 }

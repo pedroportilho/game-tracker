@@ -1,15 +1,15 @@
-﻿import Link from 'next/link'
-import { Sidebar } from '@/components/layout/Sidebar'
-import { MobileHeader } from '@/components/layout/Sidebar'
-import { CompletionBar } from '@/components/ui'
-import { AuthPrompt } from '@/components/AuthPrompt'
-import { getBacklog, type Game } from '@/lib/supabase'
-import { getUserFromCookies } from '@/lib/auth'
+﻿import Link from "next/link";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileHeader } from "@/components/layout/Sidebar";
+import { CompletionBar } from "@/components/ui";
+import { AuthPrompt } from "@/components/AuthPrompt";
+import { getBacklog, type Game } from "@/lib/supabase";
+import { getUserFromCookies } from "@/lib/auth";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export default async function BacklogPage() {
-  const user = await getUserFromCookies()
+  const user = await getUserFromCookies();
   if (!user) {
     return (
       <div className="flex min-h-screen bg-[#080a0f]">
@@ -21,19 +21,19 @@ export default async function BacklogPage() {
           />
         </div>
       </div>
-    )
+    );
   }
 
-  const games = await getBacklog(user.id)
-  const backlog = games.sort((a, b) => a.title.localeCompare(b.title))
+  const games = await getBacklog(user.id);
+  const backlog = games.sort((a, b) => a.title.localeCompare(b.title));
 
-  const byPlatform: Record<string, Game[]> = {}
+  const byPlatform: Record<string, Game[]> = {};
   for (const g of backlog) {
-    if (!byPlatform[g.platform]) byPlatform[g.platform] = []
-    byPlatform[g.platform].push(g)
+    if (!byPlatform[g.platform]) byPlatform[g.platform] = [];
+    byPlatform[g.platform].push(g);
   }
 
-  const platinumCount = backlog.filter((g) => g.platinum).length
+  const platinumCount = backlog.filter((g) => g.platinum).length;
 
   return (
     <div className="flex min-h-screen bg-[#080a0f]">
@@ -44,28 +44,42 @@ export default async function BacklogPage() {
 
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
-
             {/* Header */}
             <div className="mb-6 md:mb-8">
-              <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">Recovery Backlog</h1>
+              <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">
+                Recovery Backlog
+              </h1>
               <p className="text-zinc-600 text-sm">
-                {backlog.length} games with lost accounts · {platinumCount} platinums to re-earn
+                {backlog.length} games with lost accounts · {platinumCount}{" "}
+                platinums to re-earn
               </p>
             </div>
 
             {/* Summary cards — compactos no mobile */}
             <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
               <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">To Recover</p>
-                <p className="text-2xl md:text-3xl font-display font-bold text-red-400">{backlog.length}</p>
+                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">
+                  To Recover
+                </p>
+                <p className="text-2xl md:text-3xl font-display font-bold text-red-400">
+                  {backlog.length}
+                </p>
               </div>
               <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">Plats Lost</p>
-                <p className="text-2xl md:text-3xl font-display font-bold text-amber-400">{platinumCount}</p>
+                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">
+                  Plats Lost
+                </p>
+                <p className="text-2xl md:text-3xl font-display font-bold text-amber-400">
+                  {platinumCount}
+                </p>
               </div>
               <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">Platforms</p>
-                <p className="text-2xl md:text-3xl font-display font-bold text-zinc-300">{Object.keys(byPlatform).length}</p>
+                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">
+                  Platforms
+                </p>
+                <p className="text-2xl md:text-3xl font-display font-bold text-zinc-300">
+                  {Object.keys(byPlatform).length}
+                </p>
               </div>
             </div>
 
@@ -74,26 +88,39 @@ export default async function BacklogPage() {
               {Object.entries(byPlatform)
                 .sort(([, a], [, b]) => b.length - a.length)
                 .map(([platform, platformGames]) => (
-                  <div key={platform} className="bg-[#0f1117] border border-white/[0.06] rounded-xl overflow-hidden">
+                  <div
+                    key={platform}
+                    className="bg-[#0f1117] border border-white/[0.06] rounded-xl overflow-hidden"
+                  >
                     <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-white/[0.06] bg-white/2">
-                      <h2 className="font-display font-bold text-sm text-zinc-300 uppercase tracking-wide">{platform}</h2>
+                      <h2 className="font-display font-bold text-sm text-zinc-300 uppercase tracking-wide">
+                        {platform}
+                      </h2>
                       <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded-full">
-                        {platformGames.length} game{platformGames.length !== 1 ? 's' : ''}
+                        {platformGames.length} game
+                        {platformGames.length !== 1 ? "s" : ""}
                       </span>
                     </div>
 
                     <table className="hidden md:table w-full text-sm">
                       <tbody>
                         {platformGames.map((g) => (
-                          <tr key={g.id} className="border-b border-white/[0.06] last:border-0 hover:bg-white/2 transition-colors">
-                            
+                          <tr
+                            key={g.id}
+                            className="border-b border-white/[0.06] last:border-0 hover:bg-white/2 transition-colors"
+                          >
                             <td className="px-5 py-3">
-                              <Link href={`/games/${g.id}`} className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors">
+                              <Link
+                                href={`/games/${g.id}`}
+                                className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors"
+                              >
                                 {g.title}
                               </Link>
                             </td>
                             <td className="px-5 py-3 w-8 text-center">
-                              {g.platinum && <span className="text-sm">🏆</span>}
+                              {g.platinum && (
+                                <span className="text-sm">🏆</span>
+                              )}
                             </td>
                             <td className="px-5 py-3 w-48">
                               <CompletionBar value={g.completion} />
@@ -111,20 +138,25 @@ export default async function BacklogPage() {
                         <div key={g.id} className="px-4 py-3">
                           <div className="flex items-center gap-1.5 mb-2">
                             {g.platinum && <span className="text-xs">🏆</span>}
-                            <span className="text-sm text-zinc-200 font-medium">{g.title}</span>
+                            <span className="text-sm text-zinc-200 font-medium">
+                              {g.title}
+                            </span>
                           </div>
                           <CompletionBar value={g.completion} />
-                          {g.notes && <p className="text-xs text-zinc-200 mt-1.5 line-clamp-2">{g.notes}</p>}
+                          {g.notes && (
+                            <p className="text-xs text-zinc-200 mt-1.5 line-clamp-2">
+                              {g.notes}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
             </div>
-
           </div>
         </main>
       </div>
     </div>
-  )
+  );
 }

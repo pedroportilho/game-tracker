@@ -1,38 +1,50 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Sidebar } from '@/components/layout/Sidebar'
-import { MobileHeader } from '@/components/layout/Sidebar'
-import { Button, Modal, Input } from '@/components/ui'
-import { ChevronDown, ChevronUp, Plus, GripVertical } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileHeader } from "@/components/layout/Sidebar";
+import { Button, Modal, Input } from "@/components/ui";
+import { ChevronDown, ChevronUp, Plus, GripVertical } from "lucide-react";
 import {
   DndContext,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
-} from '@dnd-kit/core'
+} from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
   arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function CircularProgress({ value }) {
-  const r = 18
-  const circ = 2 * Math.PI * r
-  const offset = circ - (value / 100) * circ
+  const r = 18;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (value / 100) * circ;
   return (
     <div className="relative flex-shrink-0 w-12 h-12">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
-        <circle cx="22" cy="22" r={r} fill="none" stroke="#ffffff0f" strokeWidth="3" />
         <circle
-          cx="22" cy="22" r={r} fill="none"
-          stroke={value === 100 ? '#a78bfa' : '#6d28d9'}
-          strokeWidth="3" strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={offset}
+          cx="22"
+          cy="22"
+          r={r}
+          fill="none"
+          stroke="#ffffff0f"
+          strokeWidth="3"
+        />
+        <circle
+          cx="22"
+          cy="22"
+          r={r}
+          fill="none"
+          stroke={value === 100 ? "#a78bfa" : "#6d28d9"}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
           className="transition-all duration-500"
         />
       </svg>
@@ -40,7 +52,7 @@ function CircularProgress({ value }) {
         {value}%
       </span>
     </div>
-  )
+  );
 }
 
 function SortableEntry({ entry, onToggle, saving }) {
@@ -51,14 +63,14 @@ function SortableEntry({ entry, onToggle, saving }) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: entry.id })
+  } = useSortable({ id: entry.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : 'auto',
-  }
+    zIndex: isDragging ? 10 : "auto",
+  };
 
   return (
     <li
@@ -79,61 +91,77 @@ function SortableEntry({ entry, onToggle, saving }) {
         disabled={saving}
         className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
           entry.completed
-            ? 'bg-violet-600 border-violet-600 text-white'
-            : 'border-zinc-700 hover:border-violet-500'
+            ? "bg-violet-600 border-violet-600 text-white"
+            : "border-zinc-700 hover:border-violet-500"
         }`}
       >
         {entry.completed && (
           <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="none">
-            <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M1.5 5l2.5 2.5 4.5-4.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         )}
       </button>
-      <span className={`text-sm flex-1 transition-colors ${
-        entry.completed ? 'text-zinc-500 line-through decoration-zinc-600' : 'text-zinc-200'
-      }`}>
+      <span
+        className={`text-sm flex-1 transition-colors ${
+          entry.completed
+            ? "text-zinc-500 line-through decoration-zinc-600"
+            : "text-zinc-200"
+        }`}
+      >
         {entry.title}
       </span>
     </li>
-  )
+  );
 }
 
-function SeriesCard({ series, onToggle, onAddEntry, onReorderEntries, saving }) {
-  const [open, setOpen] = useState(false)
-  const [addOpen, setAddOpen] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [entries, setEntries] = useState(series.entries)
+function SeriesCard({
+  series,
+  onToggle,
+  onAddEntry,
+  onReorderEntries,
+  saving,
+}) {
+  const [open, setOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [entries, setEntries] = useState(series.entries);
 
   useEffect(() => {
-    setEntries(series.entries)
-  }, [series.entries])
+    setEntries(series.entries);
+  }, [series.entries]);
 
-  const total = entries.length
-  const done = entries.filter((e) => e.completed).length
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100)
+  const total = entries.length;
+  const done = entries.filter((e) => e.completed).length;
+  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
-  const sensors = useSensors(useSensor(PointerSensor))
+  const sensors = useSensors(useSensor(PointerSensor));
 
   async function handleDragEnd(event) {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    const oldIndex = entries.findIndex((e) => e.id === active.id)
-    const newIndex = entries.findIndex((e) => e.id === over.id)
-    const newOrder = arrayMove(entries, oldIndex, newIndex)
+    const oldIndex = entries.findIndex((e) => e.id === active.id);
+    const newIndex = entries.findIndex((e) => e.id === over.id);
+    const newOrder = arrayMove(entries, oldIndex, newIndex);
 
-    setEntries(newOrder)
-    await onReorderEntries(newOrder)
+    setEntries(newOrder);
+    await onReorderEntries(newOrder);
   }
 
   async function handleAddEntry() {
-    if (!newTitle.trim()) return
-    setAdding(true)
-    await onAddEntry(series.id, newTitle.trim())
-    setNewTitle('')
-    setAddOpen(false)
-    setAdding(false)
+    if (!newTitle.trim()) return;
+    setAdding(true);
+    await onAddEntry(series.id, newTitle.trim());
+    setNewTitle("");
+    setAddOpen(false);
+    setAdding(false);
   }
 
   return (
@@ -143,14 +171,20 @@ function SeriesCard({ series, onToggle, onAddEntry, onReorderEntries, saving }) 
           <h2 className="font-display font-bold text-zinc-100 text-base md:text-lg leading-tight truncate">
             {series.name}
           </h2>
-          <p className="text-zinc-600 text-xs mt-0.5">{done} / {total} completed</p>
+          <p className="text-zinc-600 text-xs mt-0.5">
+            {done} / {total} completed
+          </p>
         </div>
         <CircularProgress value={pct} />
         <button
           onClick={() => setOpen((v) => !v)}
           className="ml-1 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/6 transition-colors flex-shrink-0"
         >
-          {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {open ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
         </button>
       </div>
 
@@ -159,17 +193,25 @@ function SeriesCard({ series, onToggle, onAddEntry, onReorderEntries, saving }) 
           className="h-full rounded-full transition-all duration-500"
           style={{
             width: `${pct}%`,
-            background: pct === 100
-              ? 'linear-gradient(90deg, #a78bfa, #818cf8)'
-              : 'linear-gradient(90deg, #6d28d9, #4f46e5)',
+            background:
+              pct === 100
+                ? "linear-gradient(90deg, #a78bfa, #818cf8)"
+                : "linear-gradient(90deg, #6d28d9, #4f46e5)",
           }}
         />
       </div>
 
       {open && (
         <div className="border-t border-white/6">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={entries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={entries.map((e) => e.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <ul className="divide-y divide-white/4">
                 {entries.map((entry) => (
                   <SortableEntry
@@ -192,15 +234,30 @@ function SeriesCard({ series, onToggle, onAddEntry, onReorderEntries, saving }) 
                   placeholder="Game title…"
                   className="flex-1 text-sm"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddEntry()
-                    if (e.key === 'Escape') { setAddOpen(false); setNewTitle('') }
+                    if (e.key === "Enter") handleAddEntry();
+                    if (e.key === "Escape") {
+                      setAddOpen(false);
+                      setNewTitle("");
+                    }
                   }}
                   autoFocus
                 />
-                <Button variant="primary" size="sm" onClick={handleAddEntry} disabled={adding || !newTitle.trim()}>
-                  {adding ? '…' : 'Add'}
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleAddEntry}
+                  disabled={adding || !newTitle.trim()}
+                >
+                  {adding ? "…" : "Add"}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => { setAddOpen(false); setNewTitle('') }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAddOpen(false);
+                    setNewTitle("");
+                  }}
+                >
                   Cancel
                 </Button>
               </div>
@@ -216,30 +273,32 @@ function SeriesCard({ series, onToggle, onAddEntry, onReorderEntries, saving }) 
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default function SeriesPage() {
-  const [seriesList, setSeriesList] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
-  const [addSeriesOpen, setAddSeriesOpen] = useState(false)
-  const [newSeriesName, setNewSeriesName] = useState('')
+  const [seriesList, setSeriesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [addSeriesOpen, setAddSeriesOpen] = useState(false);
+  const [newSeriesName, setNewSeriesName] = useState("");
 
-  useEffect(() => { fetchSeries() }, [])
+  useEffect(() => {
+    fetchSeries();
+  }, []);
 
   async function fetchSeries() {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/series')
-      if (!res.ok) throw new Error('Failed to load series')
-      setSeriesList(await res.json())
+      const res = await fetch("/api/series");
+      if (!res.ok) throw new Error("Failed to load series");
+      setSeriesList(await res.json());
     } catch (e) {
-      setError(e.message)
+      setError(e.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -248,64 +307,80 @@ export default function SeriesPage() {
       prev.map((s) => ({
         ...s,
         entries: s.entries.map((e) =>
-          e.id === entry.id ? { ...e, completed: !e.completed } : e
+          e.id === entry.id ? { ...e, completed: !e.completed } : e,
         ),
-      }))
-    )
-    setSaving(true)
+      })),
+    );
+    setSaving(true);
     try {
-      await fetch('/api/series/entry', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/series/entry", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: entry.id, completed: !entry.completed }),
-      })
+      });
     } catch {
-      fetchSeries()
+      fetchSeries();
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   async function handleAddEntry(seriesId, title) {
-    await fetch('/api/series/entry', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/series/entry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ seriesId, title }),
-    })
-    fetchSeries()
+    });
+    fetchSeries();
   }
 
   async function handleReorderEntries(newOrder) {
-    await fetch('/api/series/entry/reorder', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entries: newOrder.map((e, index) => ({ id: e.id, position: index + 1 })),
-      }),
-    })
-  }
-
-  async function handleAddSeries() {
-    if (!newSeriesName.trim()) return
-    setSaving(true)
     try {
-      await fetch('/api/series', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newSeriesName.trim() }),
-      })
-      setNewSeriesName('')
-      setAddSeriesOpen(false)
-      fetchSeries()
-    } catch (e) {
-      alert(e.message)
-    } finally {
-      setSaving(false)
+      const res = await fetch("/api/series/entry/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entries: newOrder.map((e, index) => ({
+            id: e.id,
+            position: index + 1,
+          })),
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error || "Failed to reorder entries");
+      }
+    } catch (error) {
+      console.error("Error saving order:", error);
+      fetchSeries();
     }
   }
 
-  const totalGames = seriesList.reduce((acc, s) => acc + s.entries.length, 0)
-  const totalDone = seriesList.reduce((acc, s) => acc + s.entries.filter((e) => e.completed).length, 0)
+  async function handleAddSeries() {
+    if (!newSeriesName.trim()) return;
+    setSaving(true);
+    try {
+      await fetch("/api/series", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newSeriesName.trim() }),
+      });
+      setNewSeriesName("");
+      setAddSeriesOpen(false);
+      fetchSeries();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const totalGames = seriesList.reduce((acc, s) => acc + s.entries.length, 0);
+  const totalDone = seriesList.reduce(
+    (acc, s) => acc + s.entries.filter((e) => e.completed).length,
+    0,
+  );
 
   return (
     <div className="flex min-h-screen bg-[#080a0f]">
@@ -316,13 +391,15 @@ export default function SeriesPage() {
 
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-4xl mx-auto">
-
             <div className="flex items-center justify-between mb-6 md:mb-8">
               <div>
-                <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">Series</h1>
+                <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">
+                  Series
+                </h1>
                 {!loading && !error && (
                   <p className="text-zinc-600 text-sm">
-                    {totalDone} of {totalGames} games completed across {seriesList.length} series
+                    {totalDone} of {totalGames} games completed across{" "}
+                    {seriesList.length} series
                   </p>
                 )}
               </div>
@@ -333,11 +410,15 @@ export default function SeriesPage() {
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center h-64 text-zinc-600">Loading series…</div>
+              <div className="flex items-center justify-center h-64 text-zinc-600">
+                Loading series…
+              </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center h-64 gap-3">
                 <p className="text-red-400 text-sm">{error}</p>
-                <Button variant="default" onClick={fetchSeries}>Retry</Button>
+                <Button variant="default" onClick={fetchSeries}>
+                  Retry
+                </Button>
               </div>
             ) : (
               <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
@@ -357,23 +438,39 @@ export default function SeriesPage() {
         </main>
       </div>
 
-      <Modal isOpen={addSeriesOpen} onClose={() => setAddSeriesOpen(false)} title="New series">
+      <Modal
+        isOpen={addSeriesOpen}
+        onClose={() => setAddSeriesOpen(false)}
+        title="New series"
+      >
         <div className="flex flex-col gap-5">
           <Input
             value={newSeriesName}
             onChange={(e) => setNewSeriesName(e.target.value)}
             placeholder="Series name…"
-            onKeyDown={(e) => { if (e.key === 'Enter') handleAddSeries() }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAddSeries();
+            }}
             autoFocus
           />
           <div className="flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => setAddSeriesOpen(false)} disabled={saving}>Cancel</Button>
-            <Button variant="primary" onClick={handleAddSeries} disabled={saving || !newSeriesName.trim()}>
-              {saving ? 'Creating…' : 'Create'}
+            <Button
+              variant="ghost"
+              onClick={() => setAddSeriesOpen(false)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleAddSeries}
+              disabled={saving || !newSeriesName.trim()}
+            >
+              {saving ? "Creating…" : "Create"}
             </Button>
           </div>
         </div>
       </Modal>
     </div>
-  )
+  );
 }

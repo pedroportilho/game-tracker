@@ -22,7 +22,11 @@
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(1000px 500px at 0% -10%, rgba(139, 92, 246, 0.14), transparent 60%),
+    radial-gradient(
+      1000px 500px at 0% -10%,
+      rgba(139, 92, 246, 0.14),
+      transparent 60%
+    ),
     var(--bg);
 }
 
@@ -244,7 +248,7 @@
 }
 
 .sectionTitle::after {
-  content: '';
+  content: "";
   flex: 1;
   height: 1px;
   background: var(--line);
@@ -364,7 +368,9 @@
   cursor: pointer;
   user-select: none;
   border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .chartTab:hover {
@@ -402,8 +408,12 @@
   border-radius: 3px;
 }
 
-.legendDotPurple { background: var(--purple); }
-.legendDotGreen  { background: var(--mint); }
+.legendDotPurple {
+  background: var(--purple);
+}
+.legendDotGreen {
+  background: var(--mint);
+}
 
 .legendLabel {
   font-size: 0.75rem;
@@ -459,10 +469,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tGreen { background: #34d399; }
-.tBlue  { background: #38bdf8; }
-.tLime  { background: #d7f358; }
-.tRed   { background: #f87171; }
+.tGreen {
+  background: #34d399;
+}
+.tBlue {
+  background: #38bdf8;
+}
+.tLime {
+  background: #d7f358;
+}
+.tRed {
+  background: #f87171;
+}
 
 /* ── StatusDonut (sem caixa) ─────────────────────────────────────────── */
 .donutWrapper {

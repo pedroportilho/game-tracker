@@ -1,85 +1,150 @@
 export const PLATFORMS = [
-  '3DS','DS','GB','GBA','GBC','Gamecube','N64','NES',
-  'PS2','PS3','PS4','PS5','PSP','PSVita','PSX',
-  'SNES','Steam','Switch','Switch 2','Wii','WiiU',
-  'Windows','Xbox 360','Xbox ONE','Xbox PC',
-  'Xbox Series','Epic','GOG'
-]
+  "3DS",
+  "DS",
+  "GB",
+  "GBA",
+  "GBC",
+  "Gamecube",
+  "N64",
+  "NES",
+  "PS2",
+  "PS3",
+  "PS4",
+  "PS5",
+  "PSP",
+  "PSVita",
+  "PSX",
+  "SNES",
+  "Steam",
+  "Switch",
+  "Switch 2",
+  "Wii",
+  "WiiU",
+  "Windows",
+  "Xbox 360",
+  "Xbox ONE",
+  "Xbox PC",
+  "Xbox Series",
+  "Epic",
+  "GOG",
+];
 
 export const ACCOUNT_STATUSES = [
-  'Preserved',
-  'Lost',
-  'Re-earned',
-  'Unverified',
-]
+  "Preserved",
+  "Lost",
+  "Re-earned",
+  "Unverified",
+];
 
 export const GAME_STATUSES = [
-  'Playing',
-  'Completed',
-  'On Hold',
-  'Dropped',
-  'Backlog'
-]
+  "Playing",
+  "Completed",
+  "On Hold",
+  "Dropped",
+  "Backlog",
+];
 
 export const GENRES = [
-  'Pinball', 'Adventure', 'Indie', 'Arcade', 'Visual Novel',
-  'Card & Board Game', 'MOBA', 'Point-and-click', 'Fighting', 'Shooter',
-  'Music', 'Platform', 'Puzzle', 'Racing', 'Real Time Strategy (RTS)',
-  'Role-playing (RPG)', 'Simulator', 'Sport', 'Strategy',
-  'Turn-based strategy (TBS)', 'Tactical', 'Hack and slash/Beat \'em up',
-  'Quiz/Trivia',
-]
+  "Pinball",
+  "Adventure",
+  "Indie",
+  "Arcade",
+  "Visual Novel",
+  "Card & Board Game",
+  "MOBA",
+  "Point-and-click",
+  "Fighting",
+  "Shooter",
+  "Music",
+  "Platform",
+  "Puzzle",
+  "Racing",
+  "Real Time Strategy (RTS)",
+  "Role-playing (RPG)",
+  "Simulator",
+  "Sport",
+  "Strategy",
+  "Turn-based strategy (TBS)",
+  "Tactical",
+  "Hack and slash/Beat 'em up",
+  "Quiz/Trivia",
+];
 
 export const STATUS_STYLES = {
-  'Preserved':        { bg: 'bg-emerald-900/40', text: 'text-emerald-400', border: 'border-emerald-700/30' },
-  'Lost':     { bg: 'bg-red-900/40',     text: 'text-red-400',     border: 'border-red-700/30' },
-  'Re-earned':        { bg: 'bg-blue-900/40',    text: 'text-blue-400',    border: 'border-blue-700/30' },
-  'Unverified':         { bg: 'bg-zinc-800',       text: 'text-zinc-400',    border: 'border-zinc-700/30' },
-}
+  Preserved: {
+    bg: "bg-emerald-900/40",
+    text: "text-emerald-400",
+    border: "border-emerald-700/30",
+  },
+  Lost: {
+    bg: "bg-red-900/40",
+    text: "text-red-400",
+    border: "border-red-700/30",
+  },
+  "Re-earned": {
+    bg: "bg-blue-900/40",
+    text: "text-blue-400",
+    border: "border-blue-700/30",
+  },
+  Unverified: {
+    bg: "bg-zinc-800",
+    text: "text-zinc-400",
+    border: "border-zinc-700/30",
+  },
+};
 
 // Excel serial → JS Date in UTC (avoids timezone shifting the year)
 function serialToUTCDate(serial) {
-  if (!serial || isNaN(serial)) return null
-  const ms = Math.round((parseFloat(serial) - 25569) * 86400 * 1000)
-  return new Date(ms)
+  if (!serial || isNaN(serial)) return null;
+  const ms = Math.round((parseFloat(serial) - 25569) * 86400 * 1000);
+  return new Date(ms);
 }
 
 // Excel serial date → year number
 export function serialToYear(serial) {
-  const date = serialToUTCDate(serial)
-  if (!date) return null
-  return date.getUTCFullYear()
+  const date = serialToUTCDate(serial);
+  if (!date) return null;
+  return date.getUTCFullYear();
 }
 
 // Excel serial date → formatted date string (e.g. "Mar 2019")
 export function serialToDate(serial) {
-  const date = serialToUTCDate(serial)
-  if (!date) return null
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+  const date = serialToUTCDate(serial);
+  if (!date) return null;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 export function formatCompletion(val) {
-  if (val == null || val === '') return null
-  return Math.round(parseFloat(val) * 100)
+  if (val == null || val === "") return null;
+  return Math.round(parseFloat(val) * 100);
 }
 
 // Canonical date display for game completion dates: "May 2024" style.
 // Accepts ISO `YYYY-MM-DD`, legacy `DD/MM/YYYY`, or `Mon YYYY` strings.
 export function formatGameDate(value) {
-  if (!value) return null
-  if (typeof value === 'string') {
-    if (/^[A-Za-z]{3}\s\d{4}$/.test(value)) return value
-    let date
+  if (!value) return null;
+  if (typeof value === "string") {
+    if (/^[A-Za-z]{3}\s\d{4}$/.test(value)) return value;
+    let date;
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [y, m, d] = value.split("-"); return `${d}/${m}/${y}`
+      const [y, m, d] = value.split("-");
+      return `${d}/${m}/${y}`;
     } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-      const [d, m, y] = value.split('/')
-      date = new Date(Date.UTC(+y, +m - 1, +d))
+      const [d, m, y] = value.split("/");
+      date = new Date(Date.UTC(+y, +m - 1, +d));
     } else {
-      date = new Date(value)
+      date = new Date(value);
     }
-    if (isNaN(date)) return null
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+    if (isNaN(date)) return null;
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
   }
-  return serialToDate(value)
+  return serialToDate(value);
 }

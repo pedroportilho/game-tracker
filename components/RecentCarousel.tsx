@@ -1,32 +1,35 @@
-'use client'
+"use client";
 
-import { useRef } from 'react'
-import { formatGameDate } from '@/lib/constants'
-import type { Game } from '@/lib/supabase'
+import { useRef } from "react";
+import { formatGameDate } from "@/lib/constants";
+import type { Game } from "@/lib/supabase";
 
 type Props = {
-  games: Game[]
-}
+  games: Game[];
+};
 
 export function RecentCarousel({ games }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="min-w-0 overflow-hidden">
       <div
         ref={scrollRef}
         className="flex gap-2 items-start overflow-x-auto pb-2 scroll-smooth"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#3f3f46 transparent",
+        }}
       >
         {games.map((game) => (
           <div
             key={game.id}
             className="group flex-none"
-            style={{ width: '160px' }}
+            style={{ width: "160px" }}
           >
             <div
               className="rounded-xl overflow-hidden bg-zinc-800 border border-white/8 mb-2 relative w-full"
-              style={{ aspectRatio: '3 / 4' }}
+              style={{ aspectRatio: "3 / 4" }}
             >
               {game.cover ? (
                 <a href={`/games/${game.id}`} className="absolute inset-0">
@@ -52,10 +55,12 @@ export function RecentCarousel({ games }: Props) {
                 {game.title}
               </a>
             </p>
-            <p className="text-[11px] text-zinc-600 mt-0.5 truncate">{game.platform} · {formatGameDate(game.date)}</p>
+            <p className="text-[11px] text-zinc-600 mt-0.5 truncate">
+              {game.platform} · {formatGameDate(game.date)}
+            </p>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
