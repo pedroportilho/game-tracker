@@ -140,55 +140,51 @@ export default async function GameDetailPage({ params }) {
                 </div>
               )}
 
-              {igdbUrl && (
-                <div className={styles.actions}>
-                  <Link
-                    href={igdbUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={styles.igdbLink}
-                  >
-                    <ExternalLink className={styles.iconSm} /> View on IGDB
-                  </Link>
-                </div>
-              )}
+              {(game.genres?.length > 0 || igdbThemes.length > 0 || igdbUrl) && (
+  <div className={styles.tagRow}>
+    {(game.genres?.length > 0 || igdbThemes.length > 0) && (
+      <div className={styles.tagGroups}>
+        {game.genres?.length > 0 && (
+          <div>
+            <p className={styles.label}>Genres</p>
+            <div className={styles.tags}>
+              {game.genres.map((g) => (
+                <span key={g} className={`${styles.tag} ${styles.tagGenre}`}>
+                  {g}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
-              {(game.genres?.length > 0 || igdbThemes.length > 0) && (
-                <div className={styles.tagGroups}>
-                  {game.genres?.length > 0 && (
-                    <div>
-                      <p className={styles.label}>Genres</p>
-                      <div className={styles.tags}>
-                        {game.genres.map((g) => (
-                          <span
-                            key={g}
-                            className={`${styles.tag} ${styles.tagGenre}`}
-                          >
-                            {g}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+        {igdbThemes.length > 0 && (
+          <div>
+            <p className={styles.label}>Themes</p>
+            <div className={styles.tags}>
+              {igdbThemes.map((t) => (
+                <span key={t} className={`${styles.tag} ${styles.tagTheme}`}>
+                  <Tag className={styles.iconXs} />
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )}
 
-                  {igdbThemes.length > 0 && (
-                    <div>
-                      <p className={styles.label}>Themes</p>
-                      <div className={styles.tags}>
-                        {igdbThemes.map((t) => (
-                          <span
-                            key={t}
-                            className={`${styles.tag} ${styles.tagTheme}`}
-                          >
-                            <Tag className={styles.iconXs} />
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+    {igdbUrl && (
+      <Link
+        href={igdbUrl}
+        target="_blank"
+        rel="noreferrer"
+        className={styles.igdbLink}
+      >
+        <ExternalLink className={styles.iconSm} /> View on IGDB
+      </Link>
+    )}
+  </div>
+)}
             </div>
           </section>
 

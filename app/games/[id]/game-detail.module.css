@@ -260,8 +260,16 @@
   max-width: 26rem;
 }
 
-.actions {
+.tagRow {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+}
+
+.tagRow .igdbLink {
+  margin-left: auto;
 }
 
 .igdbLink {
@@ -326,8 +334,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 2.75rem;
-  padding-top: 2.5rem;
-  border-top: 1px solid var(--line);
   min-width: 0;
 }
 
