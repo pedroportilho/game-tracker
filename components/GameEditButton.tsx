@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Modal } from "@/components/ui";
+import { Modal } from "@/components/ui";
 import { GameForm } from "@/components/GameForm";
 import { Pencil } from "lucide-react";
+import styles from "./GameForm.module.css";
 
 export function GameEditButton({ game }) {
   const [open, setOpen] = useState(false);
@@ -32,10 +33,14 @@ export function GameEditButton({ game }) {
 
   return (
     <>
-      <Button variant="default" onClick={() => setOpen(true)}>
-        <Pencil className="w-4 h-4" />
+      <button
+        type="button"
+        className={styles.editBtn}
+        onClick={() => setOpen(true)}
+      >
+        <Pencil className={styles.editIcon} />
         <span>Edit game</span>
-      </Button>
+      </button>
 
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Edit game">
         <GameForm

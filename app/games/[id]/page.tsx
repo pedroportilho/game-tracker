@@ -7,18 +7,9 @@ import { getGameById } from "@/lib/supabase";
 import { getGame, igdbImageUrl } from "@/lib/igdb";
 import { getUserFromCookies } from "@/lib/auth";
 import { formatGameDate } from "@/lib/constants";
-import {
-  ArrowLeft,
-  ExternalLink,
-  Calendar,
-  Trophy,
-  Monitor,
-  Users,
-  Pencil,
-  Tag,
-  FileText,
-} from "lucide-react";
+import { ArrowLeft, ExternalLink, Calendar, Trophy, Tag } from "lucide-react";
 import { GameEditButton } from "@/components/GameEditButton";
+import styles from "./game-detail.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -32,43 +23,20 @@ async function fetchIgdb(igdbId) {
   }
 }
 
-function SectionLabel({ children }) {
-  return (
-    <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-2">
-      {children}
-    </p>
-  );
-}
-
-function InfoCard({ children, className = "" }) {
-  return (
-    <div
-      className={`rounded-xl bg-[#0f1117] border border-white/[0.06] p-4 ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
 export default async function GameDetailPage({ params }) {
   const user = await getUserFromCookies();
   if (!user) {
     return (
-      <div className="flex min-h-screen bg-[#080a0f]">
+      <div className={styles.authFallback}>
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="max-w-xl text-center text-zinc-200">
-            <h1 className="text-3xl font-bold mb-4">Login required</h1>
-            <p className="text-zinc-400 mb-6">
-              Sign in from the Games page to view game details.
-            </p>
-            <Link
-              href="/games"
-              className="inline-flex items-center justify-center rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-500 transition"
-            >
-              Go to Games
-            </Link>
-          </div>
+        <div className={styles.authBox}>
+          <h1 className={styles.authTitle}>Login required</h1>
+          <p className={styles.authText}>
+            Sign in from the Games page to view game details.
+          </p>
+          <Link href="/games" className={styles.igdbLink}>
+            Go to Games
+          </Link>
         </div>
       </div>
     );
@@ -101,123 +69,100 @@ export default async function GameDetailPage({ params }) {
     .map((c) => c.company?.name)
     .filter(Boolean);
 
+  // Define quais colunas do corpo existem (se só houver uma, ela ocupa a largura toda)
+  const hasMain = Boolean(game.notes || summary);
+  const hasFacts =
+    Boolean(releaseDate) || developers.length > 0 || publishers.length > 0;
+  const hasRail = hasFacts || igdbPlatforms.length > 0;
+
   return (
-    <div className="flex min-h-screen bg-[#080a0f]">
+    <div className={styles.detailPage}>
       <Sidebar />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={styles.main}>
         <MobileHeader title={game.title} />
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="w-full md:max-w-5xl mx-auto">
-            {/* Top nav */}
-            <div className="flex items-center justify-between mb-8">
-              <Link
-                href="/games"
-                className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-200 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" /> Back to games
-              </Link>
-              <GameEditButton game={game} />
+        <main className={styles.content}>
+          {/* ── Barra superior ── */}
+          <div className={styles.topNav}>
+            <Link href="/games" className={styles.back}>
+              <ArrowLeft className={styles.iconSm} /> Back to games
+            </Link>
+            <GameEditButton game={game} />
+          </div>
+
+          {/* ── Hero: capa + título ── */}
+          <section className={styles.hero}>
+            <div className={styles.coverWrap}>
+              {cover ? (
+                <img src={cover} alt={game.title} className={styles.cover} />
+              ) : (
+                <div className={styles.coverEmpty}>
+                  {game.igdb_id ? "No cover available" : "Not linked to IGDB"}
+                </div>
+              )}
             </div>
 
-            {/* Hero: cover + title block */}
-            <div className="flex flex-col md:grid md:grid-cols-[240px_1fr] gap-6 md:gap-10 mb-10">
-              {/* Cover */}
-              <div className="flex justify-center md:block">
-                {cover ? (
-                  <img
-                    src={cover}
-                    alt={game.title}
-                    className="w-40 md:w-full rounded-2xl border border-white/8 shadow-2xl"
-                  />
-                ) : (
-                  <div className="w-40 md:w-full aspect-[3/4] rounded-2xl bg-[#0f1117] border border-white/8 flex items-center justify-center text-zinc-700 text-xs text-center px-3">
-                    {game.igdb_id ? "No cover available" : "Not linked to IGDB"}
-                  </div>
-                )}
+            <div className={styles.heroInfo}>
+              <div>
+                <p className={styles.eyebrow}>{game.id}</p>
+                <h1 className={styles.title}>
+                  {game.title}
+                  {game.platinum && (
+                    <Trophy
+                      className={styles.titleTrophy}
+                      aria-label="Platinum"
+                    />
+                  )}
+                </h1>
+
+                <div className={styles.meta}>
+                  <span className={styles.metaPlatform}>{game.platform}</span>
+                  <StatusBadge status={game.account_status} />
+                  {game.platinum && (
+                    <span className={`${styles.metaItem} ${styles.metaPlat}`}>
+                      <Trophy className={styles.iconXs} /> Platinum
+                    </span>
+                  )}
+                  {game.date && (
+                    <span className={styles.metaItem}>
+                      <Calendar className={styles.iconXs} />
+                      {formatGameDate(game.date)}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Title + status + completion */}
-              <div className="flex flex-col gap-5">
-                <div>
-                  <p className="text-xs text-zinc-600 mb-1 tracking-widest uppercase">
-                    {game.id}
-                  </p>
-                  <h1 className="font-display font-bold text-2xl md:text-4xl text-zinc-100 mb-2 leading-tight">
-                    {game.title}
-                    {game.platinum && (
-                      <span className="ml-3 text-2xl md:text-3xl align-middle">
-                        🏆
-                      </span>
-                    )}
-                  </h1>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700/40 text-xs font-medium">
-                      {game.platform}
-                    </span>
-                    <StatusBadge status={game.account_status} />
-                    {game.platinum && (
-                      <span className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-medium">
-                        <Trophy className="w-3.5 h-3.5" /> Platinum
-                      </span>
-                    )}
-                    {game.date && (
-                      <span className="inline-flex items-center gap-1.5 text-zinc-500 text-xs">
-                        <Calendar className="w-3.5 h-3.5" />{" "}
-                        {formatGameDate(game.date)}
-                      </span>
-                    )}
-                  </div>
+              {game.completion != null && (
+                <div className={styles.completion}>
+                  <p className={styles.label}>Completion</p>
+                  <CompletionBar value={game.completion} />
                 </div>
+              )}
 
-                <div className="flex flex-col gap-4 md:flex-row">
-                  {/* Completion */}
-                  {game.completion != null && (
-                    <div className="w-full md:w-[80%]">
-                      <SectionLabel>Completion</SectionLabel>
-                      <CompletionBar value={game.completion} />
-                    </div>
-                  )}
-
-                  {/* IGDB link */}
-                  {igdbUrl && (
-                    <div className="flex w-[40%] justify-start md:justify-end">
-                      <Link
-                        href={igdbUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-1 text-sm font-semibold text-white hover:bg-violet-500 transition"
-                      >
-                        <ExternalLink className="w-4 h-4" /> View on IGDB
-                      </Link>
-                    </div>
-                  )}
+              {igdbUrl && (
+                <div className={styles.actions}>
+                  <Link
+                    href={igdbUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.igdbLink}
+                  >
+                    <ExternalLink className={styles.iconSm} /> View on IGDB
+                  </Link>
                 </div>
+              )}
 
-                {/* User Notes */}
-                {game.notes && (
-                  <div>
-                    <InfoCard>
-                      <SectionLabel>Notes</SectionLabel>
-                      <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
-                        {game.notes}
-                      </p>
-                    </InfoCard>
-                  </div>
-                )}
-
-                {/* Genres + Themes */}
-                <div className="flex flex-col md:flex-row gap-3">
+              {(game.genres?.length > 0 || igdbThemes.length > 0) && (
+                <div className={styles.tagGroups}>
                   {game.genres?.length > 0 && (
-                    <div className="w-full md:w-[50%]">
-                      <SectionLabel>Genres</SectionLabel>
-                      <div className="flex flex-wrap gap-1.5">
+                    <div>
+                      <p className={styles.label}>Genres</p>
+                      <div className={styles.tags}>
                         {game.genres.map((g) => (
                           <span
                             key={g}
-                            className="px-2.5 py-1 rounded-lg text-xs bg-violet-900/30 text-violet-300 border border-violet-700/30 font-medium"
+                            className={`${styles.tag} ${styles.tagGenre}`}
                           >
                             {g}
                           </span>
@@ -228,14 +173,14 @@ export default async function GameDetailPage({ params }) {
 
                   {igdbThemes.length > 0 && (
                     <div>
-                      <SectionLabel>Themes</SectionLabel>
-                      <div className="flex flex-wrap gap-1.5">
+                      <p className={styles.label}>Themes</p>
+                      <div className={styles.tags}>
                         {igdbThemes.map((t) => (
                           <span
                             key={t}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-sky-900/25 text-sky-300 border border-sky-700/25 font-medium"
+                            className={`${styles.tag} ${styles.tagTheme}`}
                           >
-                            <Tag className="w-3 h-3" />
+                            <Tag className={styles.iconXs} />
                             {t}
                           </span>
                         ))}
@@ -243,92 +188,94 @@ export default async function GameDetailPage({ params }) {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-white/[0.06] mb-8" />
-
-            {/* Summary */}
-            {summary && (
-              <div className="mb-8">
-                <InfoCard>
-                  <SectionLabel>Summary</SectionLabel>
-                  <p className="text-sm leading-relaxed text-zinc-400">
-                    {summary}
-                  </p>
-                </InfoCard>
-              </div>
-            )}
-
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Info grid */}
-              <div className="w-full md:w-[45%]">
-                <InfoCard>
-                  {releaseDate && (
-                    <div>
-                      <SectionLabel>Released</SectionLabel>
-                      <p className="text-sm text-zinc-100 font-medium mb-2">
-                        {releaseDate}
-                      </p>
-                      <div className="border-t border-white/[0.06] mb-2" />
-                    </div>
-                  )}
-
-                  {developers.length > 0 && (
-                    <div>
-                      <SectionLabel>
-                        Developer{developers.length > 1 ? "s" : ""}
-                      </SectionLabel>
-                      <div className="flex flex-col gap-1 mb-2">
-                        {developers.map((d) => (
-                          <p key={d} className="text-sm text-zinc-100">
-                            {d}
-                          </p>
-                        ))}
-                      </div>
-                      <div className="border-t border-white/[0.06] mb-2" />
-                    </div>
-                  )}
-
-                  {publishers.length > 0 && (
-                    <div>
-                      <SectionLabel>
-                        Publisher{publishers.length > 1 ? "s" : ""}
-                      </SectionLabel>
-                      <div className="flex flex-col gap-1 mb-2">
-                        {publishers.map((p) => (
-                          <p key={p} className="text-sm text-zinc-100">
-                            {p}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </InfoCard>
-              </div>
-
-              {/* Platforms */}
-              {igdbPlatforms.length > 0 && (
-                <div className="w-full md:w-[60%]">
-                  <InfoCard className="h-full">
-                    <SectionLabel>Available on</SectionLabel>
-                    <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                      {igdbPlatforms.map((platform) => (
-                        <li
-                          key={platform}
-                          className="flex items-center gap-2 text-sm text-zinc-300"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
-                          {platform}
-                        </li>
-                      ))}
-                    </ul>
-                  </InfoCard>
-                </div>
               )}
             </div>
-          </div>
+          </section>
+
+          {/* ── Corpo: principal + rail ── */}
+          {(hasMain || hasRail) && (
+            <div
+              className={`${styles.layout} ${
+                hasMain && hasRail ? "" : styles.layoutSolo
+              }`}
+            >
+              {hasMain && (
+                <div className={styles.primary}>
+                  {game.notes && (
+                    <section className={styles.block}>
+                      <p className={styles.sectionTitle}>Notes</p>
+                      <p className={styles.notes}>{game.notes}</p>
+                    </section>
+                  )}
+
+                  {summary && (
+                    <section className={styles.block}>
+                      <p className={styles.sectionTitle}>Summary</p>
+                      <p className={styles.summary}>{summary}</p>
+                    </section>
+                  )}
+                </div>
+              )}
+
+              {hasRail && (
+                <aside className={styles.rail}>
+                  {hasFacts && (
+                    <section className={styles.block}>
+                      <p className={styles.sectionTitle}>Details</p>
+                      <dl className={styles.facts}>
+                        {releaseDate && (
+                          <div className={styles.fact}>
+                            <dt className={styles.factLabel}>Released</dt>
+                            <dd className={styles.factValue}>{releaseDate}</dd>
+                          </div>
+                        )}
+
+                        {developers.length > 0 && (
+                          <div className={styles.fact}>
+                            <dt className={styles.factLabel}>
+                              Developer{developers.length > 1 ? "s" : ""}
+                            </dt>
+                            <dd className={styles.factValue}>
+                              {developers.map((d) => (
+                                <span key={d}>{d}</span>
+                              ))}
+                            </dd>
+                          </div>
+                        )}
+
+                        {publishers.length > 0 && (
+                          <div className={styles.fact}>
+                            <dt className={styles.factLabel}>
+                              Publisher{publishers.length > 1 ? "s" : ""}
+                            </dt>
+                            <dd className={styles.factValue}>
+                              {publishers.map((p) => (
+                                <span key={p}>{p}</span>
+                              ))}
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+                    </section>
+                  )}
+
+                  {igdbPlatforms.length > 0 && (
+                    <section className={styles.block}>
+                      <p className={styles.sectionTitle}>Available on</p>
+                      <ul className={styles.platformList}>
+                        {igdbPlatforms.map((platform) => (
+                          <li key={platform} className={styles.platformItem}>
+                            <span className={styles.platformDot} />
+                            {platform}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                </aside>
+              )}
+            </div>
+          )}
         </main>
       </div>
     </div>

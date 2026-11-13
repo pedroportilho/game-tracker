@@ -1,22 +1,15 @@
 "use client";
 
-import {
-  useState,
-  useEffect,
-  useRef,
-  ChangeEvent,
-  FormEvent,
-  KeyboardEvent,
-} from "react";
+import { useState, useEffect, useRef, FormEvent, ReactNode } from "react";
 import type { Game } from "@/lib/supabase";
-import { Input, Select, Button } from "@/components/ui";
 import {
   PLATFORMS,
   ACCOUNT_STATUSES,
   GENRES,
   GAME_STATUSES,
 } from "@/lib/constants";
-import { Search, X } from "lucide-react";
+import { Search, X, Trophy } from "lucide-react";
+import styles from "./GameForm.module.css";
 
 type GameFormState = {
   title: string;
@@ -125,6 +118,25 @@ function mapIgdbGenres(igdbGenres: unknown) {
   return [...new Set(out)];
 }
 
+// Campo: rótulo pequeno + controle + mensagem de erro
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className={`${styles.field} ${error ? styles.hasError : ""}`}>
+      <span className={styles.label}>{label}</span>
+      {children}
+      {error && <span className={styles.error}>{error}</span>}
+    </label>
+  );
+}
+
 function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<IgdbSearchResult[]>([]);
@@ -168,17 +180,15 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
   }, []);
 
   return (
-    <div className="relative" ref={containerRef}>
-      <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5">
-        IGDB lookup{" "}
+    <div className={styles.lookup} ref={containerRef}>
+      <p className={styles.lookupLabel}>
+        IGDB lookup
         {currentIgdbId && (
-          <span className="text-violet-400 normal-case ml-1">
-            linked #{currentIgdbId}
-          </span>
+          <span className={styles.linked}>linked #{currentIgdbId}</span>
         )}
       </p>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+      <div className={styles.lookupWrap}>
+        <Search className={styles.lookupIcon} />
         <input
           value={query}
           onChange={(e) => {
@@ -187,16 +197,16 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search IGDB by name or paste an ID…"
-          className="w-full bg-[#0f1117] border border-white/8 rounded-lg pl-9 pr-9 py-2 text-sm text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-violet-500/60 transition-colors"
+          className={`${styles.control} ${styles.lookupInput}`}
         />
         {currentIgdbId && (
           <button
             type="button"
             onClick={onClear}
             title="Unlink"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300 p-1"
+            className={styles.unlink}
           >
-            <X className="w-3.5 h-3.5" />
+            <X className={styles.unlinkIcon} />
           </button>
         )}
       </div>
@@ -209,14 +219,10 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
             results.length > 0 || loading || isId || q.length >= 2;
           if (!shouldShow) return null;
           return (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-[#0f1117] border border-white/8 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
-              {loading && (
-                <div className="px-3 py-2 text-xs text-zinc-600">
-                  Searching…
-                </div>
-              )}
+            <div className={styles.dropdown}>
+              {loading && <div className={styles.dropdownMsg}>Searching…</div>}
               {!loading && results.length === 0 && (q.length >= 2 || isId) && (
-                <div className="px-3 py-2 text-xs text-zinc-600">
+                <div className={styles.dropdownMsg}>
                   {isId ? `No game with IGDB ID ${q}` : "No results"}
                 </div>
               )}
@@ -230,23 +236,19 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
                     setResults([]);
                     setOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 text-left transition-colors"
+                  className={styles.result}
                 >
                   {r.cover ? (
-                    <img
-                      src={r.cover}
-                      alt=""
-                      className="w-8 h-10 object-cover rounded"
-                    />
+                    <img src={r.cover} alt="" className={styles.resultCover} />
                   ) : (
-                    <div className="w-8 h-10 bg-zinc-800 rounded" />
+                    <div className={styles.resultCoverEmpty} />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-zinc-200 truncate">{r.name}</p>
-                    <p className="text-[11px] text-zinc-600">
+                  <div className={styles.resultText}>
+                    <p className={styles.resultName}>{r.name}</p>
+                    <p className={styles.resultMeta}>
                       {r.year ?? "—"}
-                      {r.platforms.length > 0 &&
-                        ` · ${r.platforms.slice(0, 3).join(", ")}`}
+                      {(r.platforms?.length ?? 0) > 0 &&
+                        ` · ${r.platforms!.slice(0, 3).join(", ")}`}
                     </p>
                   </div>
                 </button>
@@ -321,7 +323,7 @@ export function GameForm({
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const errs = validate(form);
     if (Object.keys(errs).length > 0) {
@@ -348,102 +350,113 @@ export function GameForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className={styles.form}>
       <IgdbSearch
         onPick={handlePickIgdb}
         currentIgdbId={form.igdb_id}
         onClear={() => set("igdb_id", null)}
       />
 
-      <Input
-        label="Title"
-        value={form.title}
-        onChange={(e) => set("title", e.target.value)}
-        error={errors.title}
-        placeholder="Game title"
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <Select
-          label="Platform"
-          value={form.platform}
-          onChange={(e) => set("platform", e.target.value)}
-          error={errors.platform}
-        >
-          <option value="">Select…</option>
-          {PLATFORMS.map((p) => (
-            <option key={p}>{p}</option>
-          ))}
-        </Select>
-        <Input
-          label="Date"
-          type="date"
-          value={form.date}
-          onChange={(e) => set("date", e.target.value)}
+      <Field label="Title" error={errors.title}>
+        <input
+          className={`${styles.control} ${styles.controlTitle}`}
+          value={form.title}
+          onChange={(e) => set("title", e.target.value)}
         />
-      </div>
+      </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Select
-          label="Account Status"
-          value={form.account_status}
-          onChange={(e) => set("account_status", e.target.value)}
-          error={errors.account_status}
-        >
-          {ACCOUNT_STATUSES.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </Select>
-        <Select
-          label="Game Status"
-          value={form.game_status}
-          onChange={(e) => set("game_status", e.target.value)}
-          error={errors.game_status}
-        >
-          {GAME_STATUSES.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </Select>
-        <Input
-          label="Completion %"
-          type="number"
-          value={form.completion}
-          onChange={(e) => set("completion", e.target.value)}
-          error={errors.completion}
-          placeholder="0–100"
-          min="0"
-          max="100"
-        />
-        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+      <div className={styles.grid}>
+        <Field label="Platform" error={errors.platform}>
+          <select
+            className={styles.control}
+            value={form.platform}
+            onChange={(e) => set("platform", e.target.value)}
+          >
+            <option value="">Select…</option>
+            {PLATFORMS.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Date">
+          <input
+            className={styles.control}
+            type="date"
+            value={form.date}
+            onChange={(e) => set("date", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Account status" error={errors.account_status}>
+          <select
+            className={styles.control}
+            value={form.account_status}
+            onChange={(e) => set("account_status", e.target.value)}
+          >
+            {ACCOUNT_STATUSES.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Game status" error={errors.game_status}>
+          <select
+            className={styles.control}
+            value={form.game_status}
+            onChange={(e) => set("game_status", e.target.value)}
+          >
+            {GAME_STATUSES.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Completion %" error={errors.completion}>
+          <input
+            className={styles.control}
+            type="number"
+            value={form.completion}
+            onChange={(e) => set("completion", e.target.value)}
+            placeholder="0–100"
+            min="0"
+            max="100"
+          />
+        </Field>
+
+        <label className={styles.platinum}>
           <input
             type="checkbox"
+            className={styles.platinumInput}
             checked={form.platinum}
             onChange={(e) => set("platinum", e.target.checked)}
-            className="w-4 h-4 accent-violet-500 rounded"
           />
-          <span className="text-sm text-zinc-300">🏆 Platinum / 100%</span>
+          <Trophy className={styles.platinumIcon} />
+          <span className={styles.platinumText}>Platinum / 100%</span>
         </label>
       </div>
 
-      <Input
-        label="Notes"
-        value={form.notes}
-        onChange={(e) => set("notes", e.target.value)}
-        placeholder="Optional notes"
-      />
+      <Field label="Optional Notes">
+        <textarea
+          className={`${styles.control} ${styles.textarea}`}
+          value={form.notes}
+          onChange={(e) => set("notes", e.target.value)}
+          rows={1}
+        />
+      </Field>
 
-      <div className="flex gap-2 pt-1 justify-end">
-        <Button
+      <div className={styles.actions}>
+        <button
           type="button"
-          variant="ghost"
+          className={styles.btnGhost}
           onClick={onCancel}
           disabled={loading}
         >
           Cancel
-        </Button>
-        <Button type="submit" variant="primary" disabled={loading}>
+        </button>
+        <button type="submit" className={styles.btnPrimary} disabled={loading}>
           {loading ? "Saving…" : initialData ? "Save changes" : "Add game"}
-        </Button>
+        </button>
       </div>
     </form>
   );
