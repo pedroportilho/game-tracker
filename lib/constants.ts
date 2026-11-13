@@ -1,9 +1,9 @@
 export const PLATFORMS = [
   '3DS','DS','GB','GBA','GBC','Gamecube','N64','NES',
   'PS2','PS3','PS4','PS5','PSP','PSVita','PSX',
-  'SNES','Steam','Switch','Wii','WiiU','Windows',
-  'Xbox 360','Xbox ONE','Xbox PC','Xbox Series',
-  'Epic', 'GOG'
+  'SNES','Steam','Switch','Switch 2','Wii','WiiU',
+  'Windows','Xbox 360','Xbox ONE','Xbox PC',
+  'Xbox Series','Epic','GOG'
 ]
 
 export const ACCOUNT_STATUSES = [

@@ -52,6 +52,7 @@ export function StatusDonut({ buckets, total }: StatusDonutProps) {
             {
               data: STATUS_CONFIG.map((s) => buckets[s.key as keyof Buckets]),
               backgroundColor: STATUS_CONFIG.map((s) => s.color),
+              // Sem caixa atrás: em vez de borda da cor do fundo, usamos espaçamento entre fatias
               borderColor: '#0d0f14',
               borderWidth: 3,
               hoverOffset: 6,
@@ -60,7 +61,7 @@ export function StatusDonut({ buckets, total }: StatusDonutProps) {
         },
         options: {
           responsive: false,
-          cutout: '72%',
+          cutout: '78%',
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -94,7 +95,7 @@ export function StatusDonut({ buckets, total }: StatusDonutProps) {
     <div className={styles.donutWrapper}>
       {/* Canvas + centered total */}
       <div className={styles.donutCanvasWrapper}>
-        <canvas ref={canvasRef} width={140} height={140} style={{ display: "block", maxWidth: "100%" }} />
+        <canvas ref={canvasRef} width={168} height={168} style={{ display: 'block', maxWidth: '100%' }} />
         <div className={styles.donutCenter}>
           <span className={styles.donutTotal}>{total}</span>
           <span className={styles.donutTotalLabel}>games</span>

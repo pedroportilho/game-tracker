@@ -24,12 +24,13 @@ export function GenreThemeChart({ genreStats, themeStats }: Props) {
     : themeStats.map((t) => ({ label: t.theme, finished: t.finished, platinum: t.platinum }))
 
   const maxVal = Math.max(...data.map((d) => d.finished), 1)
-  const ticks = [maxVal, Math.round(maxVal * 0.5), 0]
 
   return (
-    <div className={styles.barChartCard}>
-      <div className={styles.barChartHeader}>
-        {/* Radio buttons para alternar */}
+    <section className={styles.block}>
+      <div className={styles.blockHeader}>
+        <p className={styles.sectionTitle}>Breakdown</p>
+
+        {/* Abas (radio buttons) */}
         <div className={styles.chartTabGroup}>
           <label className={`${styles.chartTab} ${active === 'genre' ? styles.chartTabActive : ''}`}>
             <input
@@ -54,56 +55,41 @@ export function GenreThemeChart({ genreStats, themeStats }: Props) {
             Theme
           </label>
         </div>
+      </div>
 
-        {/* Legenda */}
-        <div className={styles.barChartLegend}>
-          <span className={styles.legendDotPurple} />
-          <span className={styles.legendLabel}>Games</span>
-          <span className={styles.legendDotGreen} />
-          <span className={styles.legendLabel}>Platinum</span>
-        </div>
+      {/* Legenda */}
+      <div className={styles.barChartLegend}>
+        <span className={styles.legendDotPurple} />
+        <span className={styles.legendLabel}>Games</span>
+        <span className={styles.legendDotGreen} />
+        <span className={styles.legendLabel}>Platinum</span>
       </div>
 
       {data.length === 0 ? (
         <p className={styles.barChartEmpty}>No data yet</p>
       ) : (
-        <div className={styles.barChartScroll}>
-        <div className={styles.barChartOuter}>
-          <div className={styles.barChartYAxis}>
-            {ticks.map((t) => (
-              <span key={t} className={styles.barChartYTick}>{t}</span>
-            ))}
-          </div>
-          <div className={styles.barChartInner}>
-            <div className={styles.barChartBars}>
-              {data.map((item) => (
-                <div key={item.label} className={styles.barChartGroup}>
-                  <div className={styles.barPair}>
-                    <div
-                      className={styles.barPurple}
-                      style={{ height: `${Math.round((item.finished / maxVal) * 100)}%` }}
-                    >
-                      <span className={styles.barTooltip}>{item.finished}</span>
-                    </div>
-                    <div
-                      className={styles.barGreen}
-                      style={{ height: `${Math.round((item.platinum / maxVal) * 100)}%` }}
-                    >
-                      <span className={styles.barTooltip}>{Math.round(item.platinum)}</span>
-                    </div>
+        <ul className={styles.rankList}>
+          {data.map((item) => {
+            const fillPct = Math.round((item.finished / maxVal) * 100)
+            // A platina é um subconjunto dos jogos: aparece como trecho verde dentro da barra roxa
+            const platPct = item.finished ? Math.round((item.platinum / item.finished) * 100) : 0
+            return (
+              <li key={item.label} className={styles.rankRow}>
+                <span className={styles.rankLabel} title={item.label}>{item.label}</span>
+                <div className={styles.rankTrack}>
+                  <div className={styles.rankFill} style={{ width: `${fillPct}%` }}>
+                    <div className={styles.rankFillPlat} style={{ width: `${platPct}%` }} />
                   </div>
                 </div>
-              ))}
-            </div>
-            <div className={styles.barChartXLabels}>
-              {data.map((item) => (
-                <span key={item.label} className={styles.barLabel}>{item.label}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-        </div>
+                <span className={styles.rankNums}>
+                  <span>{item.finished}</span>
+                  <span className={styles.rankPlat}>{Math.round(item.platinum)}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
       )}
-    </div>
+    </section>
   )
 }

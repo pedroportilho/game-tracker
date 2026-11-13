@@ -1,7 +1,6 @@
-﻿// Dashboard page dependencies and reusable UI components
+// Dashboard page dependencies and reusable UI components
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileHeader } from '@/components/layout/Sidebar'
-import { StatCard } from '@/components/ui'
 import { AuthPrompt } from '@/components/AuthPrompt'
 import { getGames } from '@/lib/supabase'
 import { getUserFromCookies } from '@/lib/auth'
@@ -114,6 +113,19 @@ export default async function DashboardPage() {
 
   const d = await getDashboardData(user.id)
 
+  // Valores derivados só para exibição
+  const completedPct = d.total ? Math.round((d.completed / d.total) * 100) : 0
+  const platPct = Math.round(d.platRate * 100)
+  const avgPct = Math.round(d.avgCompletion * 100)
+  const maxPlatform = d.platformStats[0]?.count || 1
+
+  const accountSegments = [
+    { label: 'Preserved',  value: d.preservedCount, tone: styles.tGreen },
+    { label: 'Re-earned',  value: d.reEarnedCount,  tone: styles.tBlue },
+    { label: 'Unverified', value: d.unverifiedCount, tone: styles.tLime },
+    { label: 'Lost',       value: d.lostCount,      tone: styles.tRed },
+  ]
+
   return (
     <div className={styles.dashboardPage}>
       <Sidebar />
@@ -123,90 +135,94 @@ export default async function DashboardPage() {
 
         <main className={styles.dashboardContent}>
 
-          {/* ── Row 1: Page title ── */}
-          <div className={styles.dashboardHeader}>
-            <h1 className={styles.dashboardTitle}>Dashboard</h1>
-            <p className={styles.dashboardSubtitle}>{d.total} games tracked</p>
-          </div>
+          {/* ── KPI strip: números grandes, sem caixas ── */}
+          <section className={styles.kpiStrip}>
+            <div className={styles.kpi}>
+              <span className={styles.kpiLabel}>Total games</span>
+              <span className={styles.kpiValue}>{d.total}</span>
+              <span className={styles.kpiSub}>in your library</span>
+            </div>
 
-          {/* ── Row 2: Stat cards ── */}
-          <div className={styles.topBar}>
-            {/* Primary stats */}
-            <StatCard label="Total Games" value={d.total} />
-            <StatCard
-              label="Completed"
-              value={d.completed}
-              sub={`${d.total ? `${Math.round((d.completed / d.total) * 100)}%` : '0%'} of library`}
-            />
-            <StatCard
-              label="Platinum Rate"
-              value={`${Math.round(d.platRate * 100)}%`}
-              sub={`${d.platCount} platinums`}
-              accent
-            />
-            <StatCard label="Avg Completion" value={`${Math.round(d.avgCompletion * 100)}%`} />
+            <div className={styles.kpi}>
+              <span className={styles.kpiLabel}>Completed</span>
+              <span className={`${styles.kpiValue} ${styles.kpiValueMint}`}>{completedPct}%</span>
+              <span className={styles.kpiSub}>{d.completed} games</span>
+            </div>
 
-            {/* Account-status mini cards */}
-            <div className={styles.statusCard}>
-              <p className={styles.statusLabel}>Preserved</p>
-              <p className={`${styles.statusValue} ${styles.statusValueGreen}`}>{d.preservedCount}</p>
+            <div className={styles.kpi}>
+              <span className={styles.kpiLabel}>Platinum rate</span>
+              <span className={`${styles.kpiValue} ${styles.kpiValueBlue}`}>{platPct}%</span>
+              <span className={styles.kpiSub}>{d.platCount} platinums</span>
             </div>
-            <div className={styles.statusCard}>
-              <p className={styles.statusLabel}>Re-earned</p>
-              <p className={`${styles.statusValue} ${styles.statusValueBlue}`}>{d.reEarnedCount}</p>
-            </div>
-            <div className={styles.statusCard}>
-              <p className={styles.statusLabel}>Unverified</p>
-              <p className={`${styles.statusValue} ${styles.statusValueZinc}`}>{d.unverifiedCount}</p>
-            </div>
-            <div className={styles.statusCard}>
-              <p className={styles.statusLabel}>Lost</p>
-              <p className={`${styles.statusValue} ${styles.statusValueRed}`}>{d.lostCount}</p>
-            </div>
-          </div>
 
-          {/* ── Row 3: Recent activity carousel ── */}
-          <section className={styles.recentSection}>
-            <p className={styles.sectionTitle}>Recent activity</p>
-            <RecentCarousel games={d.recent} />
+            <div className={styles.kpi}>
+              <span className={styles.kpiLabel}>Avg completion</span>
+              <span className={styles.kpiValue}>{avgPct}%</span>
+              <span className={styles.kpiSub}>across rated games</span>
+
+            </div>
           </section>
 
-          {/* ── Row 4: Three-column grid ── */}
-          <div className={styles.bottomGrid}>
+          {/* ── Layout: coluna principal + rail ── */}
+          <div className={styles.layout}>
 
-            {/* Col 1: Status donut */}
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>
-                <p className={styles.sectionTitle}>Status distribution</p>
-              </div>
-              <StatusDonut buckets={d.buckets} total={d.total} />
+            {/* Coluna principal */}
+            <div className={styles.primary}>
+              <section className={styles.recentSection}>
+                <p className={styles.sectionTitle}>Recent activity</p>
+                <RecentCarousel games={d.recent} />
+              </section>
+
+              <GenreThemeChart genreStats={d.genreStats} themeStats={d.themeStats} />
             </div>
 
-            {/* Col 2: Top platforms */}
-            <div className={styles.chartCard}>
-              <p className={styles.sectionTitle}>Top platforms</p>
-              <div className={styles.chartGroup}>
-                {d.platformStats.map((platform) => {
-                  const maxCount = d.platformStats[0]?.count || 1
-                  const width = Math.round((platform.count / maxCount) * 100)
-                  return (
-                    <div key={platform.platform} className={styles.chartItem}>
-                      <div className={styles.chartLabel}>{platform.platform}</div>
-                      <div className={styles.chartBar}>
-                        <div className={styles.chartBarFill} style={{ width: `${width}%` }} />
-                      </div>
-                      <div className={styles.chartValue}>{platform.count}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            {/* Rail lateral */}
+            <aside className={styles.rail}>
+              <section className={styles.block}>
+                <p className={styles.sectionTitle}>Status</p>
+                <StatusDonut buckets={d.buckets} total={d.total} />
+              </section>
 
-            {/* Col 3: Genre / Theme breakdown */}
-            <GenreThemeChart genreStats={d.genreStats} themeStats={d.themeStats} />
+              <section className={styles.block}>
+                <p className={styles.sectionTitle}>Account status</p>
+                <div className={styles.segBar}>
+                  {accountSegments.map((s) =>
+                    s.value > 0 ? (
+                      <span key={s.label} className={s.tone} style={{ flexGrow: s.value }} />
+                    ) : null
+                  )}
+                </div>
+                <ul className={styles.segLegend}>
+                  {accountSegments.map((s) => (
+                    <li key={s.label} className={styles.segItem}>
+                      <span className={`${styles.segDot} ${s.tone}`} />
+                      <span>{s.label}</span>
+                      <span className={styles.segCount}>{s.value}</span>
+                    </li>
+                  ))}
+                </ul>
+          </section>
+
+              <section className={styles.block}>
+                <p className={styles.sectionTitle}>Top platforms</p>
+                <ul className={styles.rankList}>
+                  {d.platformStats.map((platform) => {
+                    const width = Math.round((platform.count / maxPlatform) * 100)
+                    return (
+                      <li key={platform.platform} className={styles.rankRow}>
+                        <span className={styles.rankLabel} title={platform.platform}>{platform.platform}</span>
+                        <div className={styles.rankTrack}>
+                          <div className={styles.rankFill} style={{ width: `${width}%` }} />
+                        </div>
+                        <span className={styles.rankNums}>{platform.count}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+            </aside>
 
           </div>
-
         </main>
       </div>
     </div>
