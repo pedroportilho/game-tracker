@@ -1,0 +1,330 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Recovery Backlog — mesmo estilo "editorial / sem caixas"
+   Faixa de números no topo; cada plataforma é uma seção com o nome grande
+   à esquerda e os jogos em linhas à direita.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Shell ───────────────────────────────────────────────────────────── */
+.backlogPage,
+.authFallback {
+  /* Tokens (iguais aos das outras páginas) */
+  --bg: #07080d;
+  --ink: #f4f4f8;
+  --muted: #94a3b8;
+  --dim: #5b6478;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --purple: #8b5cf6;
+  --purple-soft: #a78bfa;
+  --mint: #34d399;
+  --red: #f87171;
+
+  display: flex;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(1000px 500px at 0% -10%, rgba(139, 92, 246, 0.14), transparent 60%),
+    var(--bg);
+}
+
+.authFallback {
+  align-items: center;
+  justify-content: center;
+}
+
+.authWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.content {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .content {
+    gap: 2.75rem;
+    padding: 2.5rem 2.5rem 4rem;
+  }
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* No celular o título já aparece na barra superior */
+.pageTitle {
+  display: none;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.75rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+@media (min-width: 768px) {
+  .pageTitle {
+    display: block;
+  }
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--dim);
+}
+
+/* ── Faixa de números ────────────────────────────────────────────────── */
+.kpiStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 1.75rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  padding-left: 1rem;
+  border-left: 1px solid var(--line);
+}
+
+.kpi:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+@media (min-width: 768px) {
+  .kpi {
+    padding-left: 1.75rem;
+  }
+}
+
+.kpiLabel {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.kpiValue {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4.2vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.kpiValueRed {
+  color: var(--red);
+  text-shadow: 0 0 36px rgba(248, 113, 113, 0.35);
+}
+
+.kpiValueMint {
+  color: var(--mint);
+  text-shadow: 0 0 36px rgba(52, 211, 153, 0.35);
+}
+
+/* ── Seções por plataforma ───────────────────────────────────────────── */
+.groups {
+  display: flex;
+  flex-direction: column;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.75rem 0;
+}
+
+.group + .group {
+  border-top: 1px solid var(--line);
+}
+
+.group:first-child {
+  padding-top: 0;
+}
+
+@media (min-width: 768px) {
+  .group {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 2rem;
+    padding: 2.25rem 0;
+  }
+
+  .group:first-child {
+    padding-top: 0.5rem;
+  }
+
+  /* O nome da plataforma acompanha a rolagem enquanto a lista passa */
+  .groupHead {
+    position: sticky;
+    top: 2rem;
+    align-self: start;
+  }
+}
+
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .groupHead {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.4rem;
+  }
+}
+
+.platform {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.375rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+@media (min-width: 768px) {
+  .platform {
+    font-size: 1.75rem;
+  }
+}
+
+.platformCount {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--dim);
+}
+
+/* ── Linhas de jogos ─────────────────────────────────────────────────── */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'title trophy'
+    'bar bar'
+    'notes notes';
+  gap: 0.6rem 0.75rem;
+  padding: 0.95rem 0;
+  transition: background 0.2s ease;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.row:hover {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.07), transparent 70%);
+}
+
+@media (min-width: 768px) {
+  .row {
+    grid-template-columns: minmax(0, 1.3fr) 1.25rem 10rem minmax(0, 1fr);
+    grid-template-areas: 'title trophy bar notes';
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1rem 0.5rem;
+  }
+}
+
+.title {
+  grid-area: title;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.title:hover {
+  color: var(--purple-soft);
+}
+
+.trophy {
+  grid-area: trophy;
+  width: 1rem;
+  height: 1rem;
+  color: var(--mint);
+  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.5));
+}
+
+.bar {
+  grid-area: bar;
+  min-width: 0;
+}
+
+.notes {
+  grid-area: notes;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .notes {
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+/* ── Vazio ───────────────────────────────────────────────────────────── */
+.empty {
+  padding: 3rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--dim);
+}

@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
-import { Button, Modal, Input } from "@/components/ui";
-import { ChevronDown, ChevronUp, Plus, GripVertical } from "lucide-react";
+import { Button, Modal } from "@/components/ui";
+import { ChevronDown, Plus, GripVertical, Check } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -19,41 +19,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
-function CircularProgress({ value }) {
-  const r = 18;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (value / 100) * circ;
-  return (
-    <div className="relative flex-shrink-0 w-12 h-12">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
-        <circle
-          cx="22"
-          cy="22"
-          r={r}
-          fill="none"
-          stroke="#ffffff0f"
-          strokeWidth="3"
-        />
-        <circle
-          cx="22"
-          cy="22"
-          r={r}
-          fill="none"
-          stroke={value === 100 ? "#a78bfa" : "#6d28d9"}
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          className="transition-all duration-500"
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-zinc-300 tabular-nums">
-        {value}%
-      </span>
-    </div>
-  );
-}
+import styles from "./series.module.css";
 
 function SortableEntry({ entry, onToggle, saving }) {
   const {
@@ -65,53 +31,42 @@ function SortableEntry({ entry, onToggle, saving }) {
     isDragging,
   } = useSortable({ id: entry.id });
 
+  // O transform/transition do dnd-kit precisam ficar inline
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.6 : 1,
     zIndex: isDragging ? 10 : "auto",
+    position: "relative" as const,
   };
 
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 px-4 md:px-5 py-2.5 hover:bg-white/2 transition-colors bg-[#0f1117]"
+      className={`${styles.entry} ${isDragging ? styles.entryDragging : ""}`}
     >
       <button
         {...attributes}
         {...listeners}
-        className="text-zinc-700 hover:text-zinc-400 transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+        className={styles.handle}
         tabIndex={-1}
+        aria-label="Drag to reorder"
       >
-        <GripVertical className="w-3.5 h-3.5" />
+        <GripVertical className={styles.iconXs} />
       </button>
       <button
         onClick={() => onToggle(entry)}
         disabled={saving}
-        className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
-          entry.completed
-            ? "bg-violet-600 border-violet-600 text-white"
-            : "border-zinc-700 hover:border-violet-500"
-        }`}
+        aria-pressed={entry.completed}
+        aria-label={entry.completed ? "Mark as not completed" : "Mark as completed"}
+        className={`${styles.check} ${entry.completed ? styles.checkOn : ""}`}
       >
-        {entry.completed && (
-          <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="none">
-            <path
-              d="M1.5 5l2.5 2.5 4.5-4.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
+        {entry.completed && <Check className={styles.checkIcon} strokeWidth={3.5} />}
       </button>
       <span
-        className={`text-sm flex-1 transition-colors ${
-          entry.completed
-            ? "text-zinc-500 line-through decoration-zinc-600"
-            : "text-zinc-200"
+        className={`${styles.entryTitle} ${
+          entry.completed ? styles.entryTitleDone : ""
         }`}
       >
         {entry.title}
@@ -120,7 +75,7 @@ function SortableEntry({ entry, onToggle, saving }) {
   );
 }
 
-function SeriesCard({
+function SeriesItem({
   series,
   onToggle,
   onAddEntry,
@@ -140,6 +95,7 @@ function SeriesCard({
   const total = entries.length;
   const done = entries.filter((e) => e.completed).length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  const complete = total > 0 && pct === 100;
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -165,44 +121,42 @@ function SeriesCard({
   }
 
   return (
-    <div className="bg-[#0f1117] border border-white/6 rounded-xl overflow-hidden">
-      <div className="px-4 md:px-5 py-4 flex items-center gap-4">
-        <div className="flex-1 min-w-0">
-          <h2 className="font-display font-bold text-zinc-100 text-base md:text-lg leading-tight truncate">
-            {series.name}
-          </h2>
-          <p className="text-zinc-600 text-xs mt-0.5">
+    <li className={styles.series}>
+      {/* Cabeçalho: nome, progresso e seta (o botão inteiro abre/fecha) */}
+      <button
+        type="button"
+        className={styles.seriesToggle}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span>
+          <span className={styles.seriesName}>{series.name}</span>
+          <span className={styles.seriesMeta}>
             {done} / {total} completed
-          </p>
-        </div>
-        <CircularProgress value={pct} />
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="ml-1 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/6 transition-colors flex-shrink-0"
-        >
-          {open ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </button>
-      </div>
+          </span>
+        </span>
 
-      <div className="mx-4 md:mx-5 h-1 bg-white/4 rounded-full overflow-hidden mb-4">
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{
-            width: `${pct}%`,
-            background:
-              pct === 100
-                ? "linear-gradient(90deg, #a78bfa, #818cf8)"
-                : "linear-gradient(90deg, #6d28d9, #4f46e5)",
-          }}
+        <span className={styles.progress}>
+          <span className={`${styles.pct} ${complete ? styles.pctDone : ""}`}>
+            {pct}%
+          </span>
+          <span className={styles.track}>
+            <span
+              className={`${styles.trackFill} ${
+                complete ? styles.trackFillDone : ""
+              }`}
+              style={{ width: `${pct}%`, display: "block" }}
+            />
+          </span>
+        </span>
+
+        <ChevronDown
+          className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
         />
-      </div>
+      </button>
 
       {open && (
-        <div className="border-t border-white/6">
+        <div className={styles.entries}>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -212,7 +166,7 @@ function SeriesCard({
               items={entries.map((e) => e.id)}
               strategy={verticalListSortingStrategy}
             >
-              <ul className="divide-y divide-white/4">
+              <ul className={styles.entryList}>
                 {entries.map((entry) => (
                   <SortableEntry
                     key={entry.id}
@@ -225,14 +179,14 @@ function SeriesCard({
             </SortableContext>
           </DndContext>
 
-          <div className="px-4 md:px-5 py-3 border-t border-white/4">
+          <div className={styles.addRow}>
             {addOpen ? (
-              <div className="flex gap-2">
-                <Input
+              <>
+                <input
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="Game title…"
-                  className="flex-1 text-sm"
+                  className={`${styles.control} ${styles.addInput}`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleAddEntry();
                     if (e.key === "Escape") {
@@ -242,37 +196,38 @@ function SeriesCard({
                   }}
                   autoFocus
                 />
-                <Button
-                  variant="primary"
-                  size="sm"
+                <button
+                  type="button"
+                  className={styles.btnPrimary}
                   onClick={handleAddEntry}
                   disabled={adding || !newTitle.trim()}
                 >
                   {adding ? "…" : "Add"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnGhost}
                   onClick={() => {
                     setAddOpen(false);
                     setNewTitle("");
                   }}
                 >
                   Cancel
-                </Button>
-              </div>
+                </button>
+              </>
             ) : (
               <button
+                type="button"
                 onClick={() => setAddOpen(true)}
-                className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-violet-400 transition-colors"
+                className={styles.addLink}
               >
-                <Plus className="w-3.5 h-3.5" /> Add game
+                <Plus className={styles.iconXs} /> Add game
               </button>
             )}
           </div>
         </div>
       )}
-    </div>
+    </li>
   );
 }
 
@@ -381,60 +336,80 @@ export default function SeriesPage() {
     (acc, s) => acc + s.entries.filter((e) => e.completed).length,
     0,
   );
+  const overallPct = totalGames ? Math.round((totalDone / totalGames) * 100) : 0;
 
   return (
-    <div className="flex min-h-screen bg-[#080a0f]">
+    <div className={styles.seriesPage}>
       <Sidebar />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={styles.main}>
         <MobileHeader title="Series" />
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-6 md:mb-8">
-              <div>
-                <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">
-                  Series
-                </h1>
-                {!loading && !error && (
-                  <p className="text-zinc-600 text-sm">
-                    {totalDone} of {totalGames} games completed across{" "}
-                    {seriesList.length} series
-                  </p>
-                )}
+        <main className={styles.content}>
+          {/* ── Header ── */}
+          <header className={styles.header}>
+            <div className={styles.headerText}>
+              <h1 className={styles.pageTitle}>Series</h1>
+              {!loading && !error && (
+                <p className={styles.subtitle}>
+                  {totalDone} of {totalGames} games completed across{" "}
+                  {seriesList.length} series
+                </p>
+              )}
+            </div>
+            <Button variant="primary" onClick={() => setAddSeriesOpen(true)}>
+              <Plus className={styles.iconSm} />
+              <span className={styles.addLabel}>New series</span>
+            </Button>
+          </header>
+
+          {/* ── Faixa de números ── */}
+          {!loading && !error && (
+            <section className={styles.kpiStrip}>
+              <div className={styles.kpi}>
+                <span className={styles.kpiLabel}>Series</span>
+                <span className={styles.kpiValue}>{seriesList.length}</span>
               </div>
-              <Button variant="primary" onClick={() => setAddSeriesOpen(true)}>
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">New series</span>
+              <div className={styles.kpi}>
+                <span className={styles.kpiLabel}>Games</span>
+                <span className={styles.kpiValue}>{totalGames}</span>
+              </div>
+              <div className={styles.kpi}>
+                <span className={styles.kpiLabel}>Completed</span>
+                <span className={`${styles.kpiValue} ${styles.kpiValueMint}`}>
+                  {totalDone}
+                </span>
+                <span className={styles.kpiSub}>{overallPct}% overall</span>
+              </div>
+            </section>
+          )}
+
+          {/* ── Lista ── */}
+          {loading ? (
+            <div className={styles.state}>Loading series…</div>
+          ) : error ? (
+            <div className={styles.state}>
+              <p className={styles.stateError}>{error}</p>
+              <Button variant="default" onClick={fetchSeries}>
+                Retry
               </Button>
             </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center h-64 text-zinc-600">
-                Loading series…
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center h-64 gap-3">
-                <p className="text-red-400 text-sm">{error}</p>
-                <Button variant="default" onClick={fetchSeries}>
-                  Retry
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
-                {seriesList.map((series) => (
-                  <SeriesCard
-                    key={series.id}
-                    series={series}
-                    onToggle={handleToggle}
-                    onAddEntry={handleAddEntry}
-                    onReorderEntries={handleReorderEntries}
-                    saving={saving}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          ) : seriesList.length === 0 ? (
+            <p className={styles.empty}>No series yet</p>
+          ) : (
+            <ul className={styles.seriesList}>
+              {seriesList.map((series) => (
+                <SeriesItem
+                  key={series.id}
+                  series={series}
+                  onToggle={handleToggle}
+                  onAddEntry={handleAddEntry}
+                  onReorderEntries={handleReorderEntries}
+                  saving={saving}
+                />
+              ))}
+            </ul>
+          )}
         </main>
       </div>
 
@@ -443,31 +418,34 @@ export default function SeriesPage() {
         onClose={() => setAddSeriesOpen(false)}
         title="New series"
       >
-        <div className="flex flex-col gap-5">
-          <Input
+        <div className={styles.modalBody}>
+          <input
             value={newSeriesName}
             onChange={(e) => setNewSeriesName(e.target.value)}
             placeholder="Series name…"
+            className={styles.control}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleAddSeries();
             }}
             autoFocus
           />
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="ghost"
+          <div className={styles.modalActions}>
+            <button
+              type="button"
+              className={styles.btnGhost}
               onClick={() => setAddSeriesOpen(false)}
               disabled={saving}
             >
               Cancel
-            </Button>
-            <Button
-              variant="primary"
+            </button>
+            <button
+              type="button"
+              className={styles.btnPrimary}
               onClick={handleAddSeries}
               disabled={saving || !newSeriesName.trim()}
             >
               {saving ? "Creating…" : "Create"}
-            </Button>
+            </button>
           </div>
         </div>
       </Modal>

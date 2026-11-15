@@ -1,10 +1,12 @@
-﻿import Link from "next/link";
+import Link from "next/link";
+import { Trophy } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
 import { CompletionBar } from "@/components/ui";
 import { AuthPrompt } from "@/components/AuthPrompt";
 import { getBacklog, type Game } from "@/lib/supabase";
 import { getUserFromCookies } from "@/lib/auth";
+import styles from "./backlog.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +14,9 @@ export default async function BacklogPage() {
   const user = await getUserFromCookies();
   if (!user) {
     return (
-      <div className="flex min-h-screen bg-[#080a0f]">
+      <div className={styles.authFallback}>
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className={styles.authWrap}>
           <AuthPrompt
             title="Entre para ver seu backlog"
             description="Faça login ou crie uma conta para acessar a lista de jogos perdidos e sua recuperação."
@@ -34,127 +36,92 @@ export default async function BacklogPage() {
   }
 
   const platinumCount = backlog.filter((g) => g.platinum).length;
+  const platforms = Object.entries(byPlatform).sort(
+    ([, a], [, b]) => b.length - a.length,
+  );
 
   return (
-    <div className="flex min-h-screen bg-[#080a0f]">
+    <div className={styles.backlogPage}>
       <Sidebar />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={styles.main}>
         <MobileHeader title="Recovery Backlog" />
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="mb-6 md:mb-8">
-              <h1 className="hidden md:block font-display font-bold text-3xl text-zinc-100 mb-1">
-                Recovery Backlog
-              </h1>
-              <p className="text-zinc-600 text-sm">
-                {backlog.length} games with lost accounts · {platinumCount}{" "}
-                platinums to re-earn
-              </p>
+        <main className={styles.content}>
+          {/* ── Header ── */}
+          <header className={styles.header}>
+            <h1 className={styles.pageTitle}>Recovery Backlog</h1>
+            <p className={styles.subtitle}>
+              {backlog.length} games with lost accounts · {platinumCount}{" "}
+              platinums to re-earn
+            </p>
+          </header>
+
+          {/* ── Faixa de números ── */}
+          <section className={styles.kpiStrip}>
+            <div className={styles.kpi}>
+              <span className={styles.kpiLabel}>To recover</span>
+              <span className={`${styles.kpiValue} ${styles.kpiValueRed}`}>
+                {backlog.length}
+              </span>
             </div>
-
-            {/* Summary cards — compactos no mobile */}
-            <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-              <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">
-                  To Recover
-                </p>
-                <p className="text-2xl md:text-3xl font-display font-bold text-red-400">
-                  {backlog.length}
-                </p>
-              </div>
-              <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">
-                  Plats Lost
-                </p>
-                <p className="text-2xl md:text-3xl font-display font-bold text-amber-400">
-                  {platinumCount}
-                </p>
-              </div>
-              <div className="bg-[#0f1117] border border-white/[0.06] rounded-xl p-3 md:p-5">
-                <p className="text-[10px] md:text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-1 md:mb-2 leading-tight">
-                  Platforms
-                </p>
-                <p className="text-2xl md:text-3xl font-display font-bold text-zinc-300">
-                  {Object.keys(byPlatform).length}
-                </p>
-              </div>
+            <div className={styles.kpi}>
+              <span className={styles.kpiLabel}>Plats lost</span>
+              <span className={`${styles.kpiValue} ${styles.kpiValueMint}`}>
+                {platinumCount}
+              </span>
             </div>
+            <div className={styles.kpi}>
+              <span className={styles.kpiLabel}>Platforms</span>
+              <span className={styles.kpiValue}>{platforms.length}</span>
+            </div>
+          </section>
 
-            {/* Por plataforma */}
-            <div className="flex flex-col gap-4 md:gap-6">
-              {Object.entries(byPlatform)
-                .sort(([, a], [, b]) => b.length - a.length)
-                .map(([platform, platformGames]) => (
-                  <div
-                    key={platform}
-                    className="bg-[#0f1117] border border-white/[0.06] rounded-xl overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-white/[0.06] bg-white/2">
-                      <h2 className="font-display font-bold text-sm text-zinc-300 uppercase tracking-wide">
-                        {platform}
-                      </h2>
-                      <span className="text-xs text-zinc-600 bg-zinc-800 px-2 py-0.5 rounded-full">
-                        {platformGames.length} game
-                        {platformGames.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-
-                    <table className="hidden md:table w-full text-sm">
-                      <tbody>
-                        {platformGames.map((g) => (
-                          <tr
-                            key={g.id}
-                            className="border-b border-white/[0.06] last:border-0 hover:bg-white/2 transition-colors"
-                          >
-                            <td className="px-5 py-3">
-                              <Link
-                                href={`/games/${g.id}`}
-                                className="text-zinc-200 font-medium leading-tight hover:text-violet-300 transition-colors"
-                              >
-                                {g.title}
-                              </Link>
-                            </td>
-                            <td className="px-5 py-3 w-8 text-center">
-                              {g.platinum && (
-                                <span className="text-sm">🏆</span>
-                              )}
-                            </td>
-                            <td className="px-5 py-3 w-48">
-                              <CompletionBar value={g.completion} />
-                            </td>
-                            <td className="px-5 py-3 text-xs text-zinc-200 max-w-xs truncate">
-                              {g.notes}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    <div className="md:hidden divide-y divide-white/4">
-                      {platformGames.map((g) => (
-                        <div key={g.id} className="px-4 py-3">
-                          <div className="flex items-center gap-1.5 mb-2">
-                            {g.platinum && <span className="text-xs">🏆</span>}
-                            <span className="text-sm text-zinc-200 font-medium">
-                              {g.title}
-                            </span>
-                          </div>
-                          <CompletionBar value={g.completion} />
-                          {g.notes && (
-                            <p className="text-xs text-zinc-200 mt-1.5 line-clamp-2">
-                              {g.notes}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+          {/* ── Por plataforma ── */}
+          {platforms.length === 0 ? (
+            <p className={styles.empty}>No games with lost accounts</p>
+          ) : (
+            <div className={styles.groups}>
+              {platforms.map(([platform, platformGames]) => (
+                <section key={platform} className={styles.group}>
+                  <div className={styles.groupHead}>
+                    <h2 className={styles.platform}>{platform}</h2>
+                    <p className={styles.platformCount}>
+                      {platformGames.length} game
+                      {platformGames.length !== 1 ? "s" : ""}
+                    </p>
                   </div>
-                ))}
+
+                  <ul className={styles.list}>
+                    {platformGames.map((g) => (
+                      <li key={g.id} className={styles.row}>
+                        <Link href={`/games/${g.id}`} className={styles.title}>
+                          {g.title}
+                        </Link>
+
+                        {g.platinum && (
+                          <Trophy
+                            className={styles.trophy}
+                            aria-label="Platinum"
+                          />
+                        )}
+
+                        <div className={styles.bar}>
+                          <CompletionBar value={g.completion} />
+                        </div>
+
+                        {g.notes && (
+                          <p className={styles.notes} title={g.notes}>
+                            {g.notes}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
             </div>
-          </div>
+          )}
         </main>
       </div>
     </div>
