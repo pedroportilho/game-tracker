@@ -1,0 +1,182 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Estrutura comum das páginas logadas (app/(app)/layout.tsx + Page.tsx):
+   moldura com a sidebar, área de conteúdo, cabeçalho e faixa de números.
+   Cada página só estiliza o que é dela.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Moldura (layout) ────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+  color: var(--ink);
+  background: var(--page-glow), var(--bg);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Área de conteúdo (PageContent) ──────────────────────────────────── */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+  width: 100%;
+  max-width: 1100px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .content {
+    gap: 2.75rem;
+    padding: 2.5rem 2.5rem 4rem;
+  }
+}
+
+.narrow {
+  max-width: 960px;
+}
+
+.wide {
+  max-width: 1280px;
+}
+
+.full {
+  max-width: 1400px;
+}
+
+/* ── Cabeçalho (PageHeader) ──────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* No celular o título já aparece na barra do topo (MobileHeader) */
+.title {
+  display: none;
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+@media (min-width: 768px) {
+  .title {
+    display: block;
+  }
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--dim);
+}
+
+/* ── Faixa de números (KpiStrip + Kpi) ───────────────────────────────── */
+.kpiStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  row-gap: 1.75rem;
+  padding: 1.75rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  padding-left: 1rem;
+  border-left: 1px solid var(--line);
+}
+
+.kpi:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+/* 4 números: 2 por linha no celular, 4 no desktop */
+.cols4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cols4 .kpi:nth-child(odd) {
+  padding-left: 0;
+  border-left: 0;
+}
+
+@media (min-width: 768px) {
+  .kpi {
+    padding-left: 1.75rem;
+  }
+
+  .cols4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cols4 .kpi:nth-child(odd) {
+    padding-left: 1.75rem;
+    border-left: 1px solid var(--line);
+  }
+
+  .cols4 .kpi:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+.kpiLabel {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.kpiValue {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4.2vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.mint {
+  color: var(--mint);
+  text-shadow: 0 0 36px color-mix(in srgb, var(--mint) 35%, transparent);
+}
+
+.red {
+  color: var(--red);
+  text-shadow: 0 0 36px color-mix(in srgb, var(--red) 35%, transparent);
+}
+
+.blue {
+  color: var(--blue);
+  text-shadow: 0 0 36px color-mix(in srgb, var(--blue) 35%, transparent);
+}
+
+.kpiSub {
+  min-height: 1.1em;
+  font-size: 0.8125rem;
+  color: var(--dim);
+}

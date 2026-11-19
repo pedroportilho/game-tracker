@@ -2,9 +2,11 @@
 // Acesso ao banco dos checklists (servidor). A estrutura é pública e igual para
 // todos; o progresso é filtrado SEMPRE pelo user_id, como no resto do projeto.
 
+import { unstable_cache } from "next/cache";
 import { supabaseAdmin } from "./supabaseAdmin";
 import type {
   ChecklistGame,
+  ChecklistItem,
   ChecklistSection,
   Progress,
 } from "./checklists";
@@ -37,18 +39,33 @@ async function fetchAllProgress(userId: string, itemPrefix?: string) {
   return rows;
 }
 
-function sortGame(game: any): ChecklistGame {
+// Linhas como o Supabase devolve no select aninhado. weight é numeric no
+// Postgres e pode chegar como string.
+type SectionRow = Omit<ChecklistSection, "items" | "weight"> & {
+  weight: number | string;
+  checklist_items: ChecklistItem[] | null;
+};
+type GameRow = Omit<ChecklistGame, "sections"> & {
+  checklist_sections: SectionRow[] | null;
+};
+type FranchiseRow = Omit<ChecklistFranchise, "games"> & {
+  checklist_games: GameRow[] | null;
+};
+
+const bySort = (a: { sort: number }, b: { sort: number }) => a.sort - b.sort;
+
+function sortGame(game: GameRow): ChecklistGame {
   const sections: ChecklistSection[] = (game.checklist_sections ?? [])
-    .map((s: any) => ({
+    .map((s) => ({
       id: s.id,
       game_id: s.game_id,
       name: s.name,
       layout: s.layout,
       weight: Number(s.weight),
       sort: s.sort,
-      items: (s.checklist_items ?? []).sort((a: any, b: any) => a.sort - b.sort),
+      items: (s.checklist_items ?? []).sort(bySort),
     }))
-    .sort((a: ChecklistSection, b: ChecklistSection) => a.sort - b.sort);
+    .sort(bySort);
 
   return {
     id: game.id,
@@ -60,8 +77,7 @@ function sortGame(game: any): ChecklistGame {
   };
 }
 
-/** Todas as franquias com jogos, seções e itens (estrutura pública). */
-export async function getChecklistCatalog(): Promise<ChecklistFranchise[]> {
+async function fetchChecklistCatalog(): Promise<ChecklistFranchise[]> {
   const { data, error } = await supabaseAdmin
     .from("checklist_franchises")
     .select(
@@ -71,18 +87,15 @@ export async function getChecklistCatalog(): Promise<ChecklistFranchise[]> {
 
   if (error) throw new Error(error.message);
 
-  return (data as any[]).map((f) => ({
+  return (data as FranchiseRow[]).map((f) => ({
     id: f.id,
     name: f.name,
     sort: f.sort,
-    games: (f.checklist_games ?? [])
-      .map(sortGame)
-      .sort((a: ChecklistGame, b: ChecklistGame) => a.sort - b.sort),
+    games: (f.checklist_games ?? []).map(sortGame).sort(bySort),
   }));
 }
 
-/** Um jogo com todas as suas seções e itens, ou null se não existir. */
-export async function getChecklistGame(
+async function fetchChecklistGame(
   gameId: string,
 ): Promise<ChecklistGame | null> {
   const { data, error } = await supabaseAdmin
@@ -92,8 +105,31 @@ export async function getChecklistGame(
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data ? sortGame(data) : null;
+  return data ? sortGame(data as GameRow) : null;
 }
+
+// ─── Cache da estrutura ──────────────────────────────────────────────────────
+// Franquias, jogos, seções e itens são iguais para todos e só mudam quando o
+// seed roda de novo. Ficam em cache por 1 hora (o progresso, que é do usuário,
+// nunca entra em cache). Depois de rodar o seed, para ver na hora:
+//   botão "Recarregar checklists" em Configurações (admin), que chama
+//   revalidateTag(CHECKLIST_CACHE_TAG) — ou esperar a hora passar.
+export const CHECKLIST_CACHE_TAG = "checklist-structure";
+const STRUCTURE_TTL_SECONDS = 60 * 60;
+
+/** Todas as franquias com jogos, seções e itens (estrutura pública). */
+export const getChecklistCatalog = unstable_cache(
+  fetchChecklistCatalog,
+  ["checklist-catalog"],
+  { revalidate: STRUCTURE_TTL_SECONDS, tags: [CHECKLIST_CACHE_TAG] },
+);
+
+/** Um jogo com todas as suas seções e itens, ou null se não existir. */
+export const getChecklistGame = unstable_cache(
+  fetchChecklistGame,
+  ["checklist-game"],
+  { revalidate: STRUCTURE_TTL_SECONDS, tags: [CHECKLIST_CACHE_TAG] },
+);
 
 /** Progresso do usuário como mapa item_id → valor. Sem linha = 0. */
 export async function getChecklistProgress(

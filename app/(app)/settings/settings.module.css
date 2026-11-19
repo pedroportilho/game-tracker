@@ -1,0 +1,298 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Configurações — seções separadas por filetes; temas como miniaturas.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.sectionText {
+  max-width: 40rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ── Temas ───────────────────────────────────────────────────────────── */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.groupTitle {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.themeCard,
+.systemOption {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 0.875rem;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.themeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.5rem 0.5rem 0.65rem;
+}
+
+.themeCard:hover:not(:disabled),
+.systemOption:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+}
+
+.themeCard:disabled,
+.systemOption:disabled {
+  cursor: wait;
+}
+
+.selected,
+.selected:hover:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.themeLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.25rem;
+}
+
+.themeName {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.themeHint {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.selectedIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.systemOption {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem 0.6rem 0.6rem;
+}
+
+.systemOption .selectedIcon {
+  margin-left: auto;
+}
+
+.systemSwatches {
+  display: flex;
+  flex-shrink: 0;
+  width: 9rem;
+}
+
+.systemSwatches > * {
+  flex: 1;
+}
+
+.systemSwatches > :first-child {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.systemSwatches > :last-child {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* Miniatura: as cores vêm inline, de cada tema */
+.swatch {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.4rem;
+  aspect-ratio: 16 / 9;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.swatchCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid;
+  border-radius: 0.3rem;
+}
+
+.swatchLine {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.swatchBar {
+  display: block;
+  height: 3px;
+  margin-top: 0.15rem;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.swatchBar > span {
+  display: block;
+  height: 100%;
+}
+
+.swatchDots {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.swatchDots > span {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+}
+
+/* ── Plataformas ─────────────────────────────────────────────────────── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  border: 1px solid var(--line-strong);
+  border-radius: 9999px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.chipOn,
+.chipOn:hover {
+  font-weight: 600;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.count {
+  margin-right: auto;
+  font-size: 0.75rem;
+  color: var(--dim);
+}
+
+/* ── Dados ───────────────────────────────────────────────────────────── */
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.row + .row {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.rowTitle {
+  margin-bottom: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.rowActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.adminTag {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--yellow);
+  border: 1px solid color-mix(in srgb, var(--yellow) 40%, transparent);
+  border-radius: 9999px;
+}

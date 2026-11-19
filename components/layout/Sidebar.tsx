@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { logout } from "@/lib/authClient";
+import { APP_NAME } from "@/lib/constants";
+import styles from "./Sidebar.module.css";
 
 // `short` é o rótulo curto usado nas abas do celular
 const NAV = [
@@ -22,7 +24,6 @@ const NAV = [
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="lucide lucide-chart-column preview-icon"
       >
         <path d="M3 3v16a2 2 0 0 0 2 2h16" />
         <path d="M18 17V9" />
@@ -128,7 +129,7 @@ const NAV = [
   },
 ];
 
-function ChevronIcon({ collapsed }: { collapsed: boolean }) {
+function ChevronIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -140,10 +141,7 @@ function ChevronIcon({ collapsed }: { collapsed: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{
-        transition: "transform 0.3s ease",
-        transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
-      }}
+      className={styles.chevron}
     >
       <path d="M15 18l-6-6 6-6" />
     </svg>
@@ -170,106 +168,93 @@ function LogoutIcon() {
   );
 }
 
+function SettingsIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+const SETTINGS_HREF = "/settings";
+
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
 // ─── Sidebar Desktop (colapsável, sem caixas) ────────────────────────────────
 function DesktopSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside
-      className="hidden md:flex flex-col shrink-0 sticky top-0 h-screen overflow-hidden border-r border-white/[0.06]"
-      style={{
-        width: collapsed ? "68px" : "232px",
-        padding: collapsed ? "24px 10px" : "24px 16px",
-        transition: "width 0.3s ease",
-      }}
-    >
-      {/* Logo */}
-      <div
-        className={`mb-10 flex items-center ${collapsed ? "justify-center" : "px-3"}`}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/game-folder.png"
-          alt="The Save File"
-          className={`object-contain ${collapsed ? "w-10 h-10" : "w-16 h-16"}`}
-        />
+    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+      <div className={styles.logo}>
+        <img src="/images/game-folder.png" alt={APP_NAME} />
       </div>
 
-      {/* Rótulo da seção (vira uma linha fina quando recolhida) */}
       {collapsed ? (
-        <div className="mx-2 mb-3 h-px bg-white/[0.06]" />
+        <div className={styles.sectionRule} />
       ) : (
-        <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-600">
-          Menu
-        </p>
+        <p className={styles.sectionLabel}>Menu</p>
       )}
 
-      {/* Nav */}
-      <nav className="flex flex-col gap-1 flex-1">
+      <nav className={styles.nav}>
         {NAV.map(({ href, label, icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+          const active = isActive(pathname, href);
           return (
             <Link
               key={href}
               href={href}
               title={collapsed ? label : undefined}
-              className={`relative flex items-center rounded-md text-sm transition-colors duration-150 ${
-                collapsed ? "justify-center px-2 py-3" : "gap-3 px-3 py-2.5"
-              } ${
-                active
-                  ? "text-white font-semibold bg-gradient-to-r from-violet-500/10 to-transparent"
-                  : "text-zinc-500 hover:text-zinc-200"
-              }`}
+              aria-current={active ? "page" : undefined}
+              className={`${styles.link} ${active ? styles.linkActive : ""}`}
             >
-              {/* Barrinha de item ativo */}
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.8)]" />
-              )}
-              <span
-                className={`shrink-0 [&>svg]:h-5 [&>svg]:w-5 ${active ? "text-violet-400" : "text-zinc-600"}`}
-              >
-                {icon}
-              </span>
-              {!collapsed && (
-                <span style={{ whiteSpace: "nowrap", overflow: "hidden" }}>
-                  {label}
-                </span>
-              )}
+              <span className={styles.linkIcon}>{icon}</span>
+              {!collapsed && <span className={styles.linkText}>{label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="pt-4 border-t border-white/[0.06] flex flex-col gap-1">
+      <div className={styles.footer}>
+        <Link
+          href={SETTINGS_HREF}
+          title={collapsed ? "Configurações" : undefined}
+          aria-current={isActive(pathname, SETTINGS_HREF) ? "page" : undefined}
+          className={`${styles.footerBtn} ${isActive(pathname, SETTINGS_HREF) ? styles.footerActive : ""}`}
+        >
+          <SettingsIcon />
+          {!collapsed && <span>Configurações</span>}
+        </Link>
         <button
+          type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className={`flex items-center rounded-md px-3 py-2 text-zinc-500 hover:text-zinc-200 transition-colors duration-150 ${
-            collapsed ? "justify-center" : "gap-3"
-          }`}
+          className={styles.footerBtn}
           title={collapsed ? "Expandir menu" : "Recolher menu"}
         >
-          <ChevronIcon collapsed={collapsed} />
-          {!collapsed && (
-            <span className="text-xs" style={{ whiteSpace: "nowrap" }}>
-              Recolher
-            </span>
-          )}
+          <ChevronIcon />
+          {!collapsed && <span>Recolher</span>}
         </button>
         <button
+          type="button"
           onClick={logout}
-          className={`flex items-center rounded-md px-3 py-2 text-red-400/80 hover:text-red-300 transition-colors duration-150 ${
-            collapsed ? "justify-center" : "gap-3"
-          }`}
+          className={`${styles.footerBtn} ${styles.logout}`}
           title={collapsed ? "Sair" : undefined}
         >
           <LogoutIcon />
-          {!collapsed && (
-            <span className="text-xs" style={{ whiteSpace: "nowrap" }}>
-              Sair
-            </span>
-          )}
+          {!collapsed && <span>Sair</span>}
         </button>
       </div>
     </aside>
@@ -277,53 +262,48 @@ function DesktopSidebar() {
 }
 
 // ─── Barra superior (celular): logo + título + abas de navegação ─────────────
-export function MobileHeader({ title }: { title?: string }) {
+// O título é o nome da seção atual (em /games/123 aparece "Jogos").
+export function MobileHeader() {
   const pathname = usePathname();
+  const title = isActive(pathname, SETTINGS_HREF)
+    ? "Configurações"
+    : NAV.find(({ href }) => isActive(pathname, href))?.label;
 
   return (
-    <header className="md:hidden sticky top-0 z-30 bg-[#07080d]/85 backdrop-blur-xl">
-      {/* Linha 1: logo, título e sair */}
-      <div className="flex items-center gap-3 px-4 pt-3 pb-1">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/game-folder.png"
-          alt="The Save File"
-          className="w-8 h-8 shrink-0 object-contain"
-        />
-        {title && (
-          <span className="font-display font-extrabold tracking-tight text-zinc-100 text-lg">
-            {title}
-          </span>
-        )}
+    <header className={styles.mobile}>
+      <div className={styles.mobileTop}>
+        <img src="/images/game-folder.png" alt={APP_NAME} />
+        {title && <span className={styles.mobileTitle}>{title}</span>}
+        <Link
+          href={SETTINGS_HREF}
+          aria-label="Configurações"
+          title="Configurações"
+          className={`${styles.mobileAction} ${styles.mobileSettings}`}
+        >
+          <SettingsIcon />
+        </Link>
         <button
+          type="button"
           onClick={logout}
           aria-label="Sair"
           title="Sair"
-          className="ml-auto p-2 rounded-md text-red-400/80 hover:text-red-300 transition-colors"
+          className={`${styles.mobileAction} ${styles.logout}`}
         >
           <LogoutIcon />
         </button>
       </div>
 
-      {/* Linha 2: abas com sublinhado no item ativo */}
-      <nav className="flex overflow-x-auto border-b border-white/[0.06] px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav className={styles.tabs}>
         {NAV.map(({ href, short, icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+          const active = isActive(pathname, href);
           return (
             <Link
               key={href}
               href={href}
-              className={`-mb-px flex flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-[13px] transition-colors ${
-                active
-                  ? "border-violet-500 text-white font-semibold"
-                  : "border-transparent text-zinc-500 hover:text-zinc-200"
-              }`}
+              aria-current={active ? "page" : undefined}
+              className={`${styles.tab} ${active ? styles.tabActive : ""}`}
             >
-              <span
-                className={`[&>svg]:h-4 [&>svg]:w-4 ${active ? "text-violet-400" : "text-zinc-600"}`}
-              >
-                {icon}
-              </span>
+              <span className={styles.linkIcon}>{icon}</span>
               {short}
             </Link>
           );

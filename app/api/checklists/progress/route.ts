@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
+import { errorText } from "@/lib/errors";
 import { setChecklistProgress } from "@/lib/checklistsData";
 
 // PATCH { itemId: string, value: number } → { value }
@@ -15,8 +16,8 @@ export async function PATCH(req: Request) {
     }
     const saved = await setChecklistProgress(user.id, itemId, value);
     return NextResponse.json({ value: saved });
-  } catch (e: any) {
-    const status = /Invalid|exceeds|not found/i.test(e.message) ? 400 : 500;
-    return NextResponse.json({ error: e.message }, { status });
+  } catch (e) {
+    const status = /Invalid|exceeds|not found/i.test(errorText(e)) ? 400 : 500;
+    return NextResponse.json({ error: errorText(e) }, { status });
   }
 }

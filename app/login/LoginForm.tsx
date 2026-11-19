@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { login, register, safeNext } from "@/lib/authClient";
+import styles from "./login.module.css";
 
 export function LoginForm({ next }: { next?: string }) {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -34,7 +35,7 @@ export function LoginForm({ next }: { next?: string }) {
 
   return (
     <form
-      className="flex flex-col gap-4"
+      className={styles.form}
       onSubmit={(e) => {
         e.preventDefault();
         handleSubmit();
@@ -66,27 +67,24 @@ export function LoginForm({ next }: { next?: string }) {
       />
 
       {error ? (
-        <div
-          role="alert"
-          className="rounded-xl bg-red-950/60 border border-red-700/40 p-3 text-sm text-red-300"
-        >
+        <div role="alert" className={styles.alert}>
           {error}
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className={styles.actions}>
         <Button
           type="submit"
           variant="primary"
           disabled={loading || !email || !password}
-          className="w-full sm:w-auto"
+          className={styles.submit}
         >
           {loading ? "Enviando…" : isLogin ? "Entrar" : "Criar conta"}
         </Button>
 
         <button
           type="button"
-          className="text-xs text-violet-300 hover:text-violet-100 transition"
+          className={styles.switch}
           onClick={() => {
             setMode(isLogin ? "register" : "login");
             setError("");

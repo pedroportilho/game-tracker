@@ -1,4 +1,6 @@
 import { LoginForm } from "./LoginForm";
+import styles from "./login.module.css";
+import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 
 export const metadata = { title: "Entrar" };
 
@@ -11,28 +13,13 @@ export default async function LoginPage({
   const { next } = await searchParams;
 
   return (
-    <main
-      className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{
-        background:
-          "radial-gradient(900px 480px at 50% -10%, rgba(139, 92, 246, 0.16), transparent 60%), #07080d",
-      }}
-    >
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0f1117] p-8 shadow-2xl">
-        <div className="mb-8 flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/game-folder.png"
-            alt=""
-            className="w-14 h-14 shrink-0 object-contain"
-          />
+    <main className={styles.page}>
+      <div className={styles.card}>
+        <div className={styles.brand}>
+          <img src="/images/game-folder.png" alt="" />
           <div>
-            <h1 className="text-2xl font-display font-bold text-zinc-100">
-              The Save File
-            </h1>
-            <p className="text-sm text-zinc-400">
-              Entre para acessar sua coleção.
-            </p>
+            <h1 className={styles.title}>{APP_NAME}</h1>
+            <p className={styles.subtitle}>{APP_TAGLINE}</p>
           </div>
         </div>
 

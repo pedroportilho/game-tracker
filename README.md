@@ -1,6 +1,6 @@
-# 🎮 The Save File
+# 🎮 Ludora
 
-Personal game collection tracker: games, series, account-recovery backlog,
+*Every game, to 100%.* Personal game collection tracker: games, series, account-recovery backlog,
 100% checklists and a stats dashboard. Multi-user, with login.
 
 ## Stack
@@ -8,7 +8,7 @@ Personal game collection tracker: games, series, account-recovery backlog,
 - **Next.js 15** (App Router) — pages + API routes
 - **Supabase** — Postgres database and auth
 - **IGDB API** (via Twitch OAuth) — covers, genres, themes and game details
-- **Tailwind CSS** + CSS Modules — styling
+- **CSS Modules** — styling (theme tokens in `app/globals.css`)
 - **Chart.js**, **dnd-kit** — dashboard charts, drag-to-reorder series
 
 ---
@@ -40,6 +40,23 @@ Open [http://localhost:3000](http://localhost:3000). Every page except
 
 ---
 
+## Tests
+
+```bash
+npm test             # unit + API route tests (Vitest) — no server, no database
+npm run test:smoke   # hits the running dev server (npm run dev) on :3000
+```
+
+- **`tests/unit/`** — checklist math, pt-BR formats, themes (incl. WCAG
+  contrast), settings, token verification, middleware redirects/refresh, the
+  browser API client and every API route with Supabase/IGDB mocked. The test
+  env points Supabase at a fake URL, so a missing mock can never touch real data.
+- **`tests/smoke/`** — real HTTP against the running site: pages, CSS files,
+  401s and forged-token rejection. With `SMOKE_EMAIL` / `SMOKE_PASSWORD` set,
+  it also logs in and opens every page (read-only), then logs out.
+- Never run a second `next dev` or `next build` while `npm run dev` is
+  running: both write `.next` and break the site.
+
 ## How auth works
 
 - `POST /api/auth` signs in with Supabase and stores the access and refresh
@@ -63,20 +80,29 @@ app/
 │   ├── checklists/progress/    # PATCH checklist item progress
 │   └── igdb/                   # search, game details, sync-covers
 ├── login/                      # the only public page
-├── dashboard/                  # stats & charts
-├── games/ , games/[id]/        # game list + detail
-├── series/                     # series with drag-to-reorder
-├── backlog/                    # lost-account recovery list
-└── checklists/                 # 100% checklists per game
+└── (app)/                      # logged-in pages (the group is not in the URL)
+    ├── layout.tsx              # shared frame: sidebar + mobile header
+    ├── error.tsx               # shared "could not load" screen
+    ├── dashboard/              # stats & charts
+    ├── games/ , games/[id]/    # game list + detail
+    ├── series/                 # series with drag-to-reorder
+    ├── backlog/                # lost-account recovery list
+    └── checklists/             # 100% checklists per game
 
-components/                     # Sidebar, GameForm, ui (Button, Modal…)
+components/
+├── layout/                     # Sidebar, Page (PageContent, PageHeader, Kpi)
+├── ui/                         # Button, Input, Modal, ProgressBar, Toaster
+└── GameForm.tsx, …
 lib/
-├── auth.ts, authCookies.ts     # server-side session helpers
+├── auth.ts, authCookies.ts     # server-side session (JWT verified locally)
 ├── authClient.ts               # login/logout from the browser
-├── supabase.ts                 # games & series data access
+├── api.ts, errors.ts           # browser → /api calls with uniform errors
+├── gamesData.ts, seriesData.ts # games & series data access
 ├── checklists.ts               # checklist types + completion math (pure)
-├── checklistsData.ts           # checklist data access
-├── igdb.ts                     # IGDB client
+├── checklistsData.ts           # checklist data access (structure cached 1h)
+├── igdb.ts                     # IGDB client (game details cached 1 day)
+├── themes.ts                   # theme palettes (base colors; the rest derive in CSS)
+├── settings.ts                 # user settings, stored in the account user_metadata
 └── constants.ts                # platforms, genres, statuses
 middleware.ts                   # session refresh + login redirect
 public/checklists/              # checklist icons and logos
@@ -94,3 +120,4 @@ public/checklists/              # checklist icons and logos
 | Series | `/series` | Franchises with completion progress and drag-to-reorder |
 | Backlog | `/backlog` | Games from lost accounts, to recover |
 | Checklists | `/checklists` | 100% checklists with progress per game |
+| Settings | `/settings` | Theme (12 editor-inspired palettes), platforms you use, data export, IGDB sync |

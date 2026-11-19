@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
-import { updateEntriesOrder } from "@/lib/supabase";
+import { errorText } from "@/lib/errors";
+import { updateEntriesOrder } from "@/lib/seriesData";
 
 export async function PATCH(req: Request) {
   const user = await getUserFromRequest(req);
@@ -22,7 +23,7 @@ export async function PATCH(req: Request) {
     await updateEntriesOrder(entries, user.id);
 
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: errorText(e) }, { status: 500 });
   }
 }

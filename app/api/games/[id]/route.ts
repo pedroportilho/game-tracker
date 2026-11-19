@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
-import { updateGame, deleteGame } from "@/lib/supabase";
+import { errorText } from "@/lib/errors";
+import { updateGame, deleteGame, pickGameInput } from "@/lib/gamesData";
 
 export async function PUT(
   req: Request,
@@ -12,13 +13,12 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = await req.json();
-    const { id: _, created_at, updated_at, ...data } = body;
+    const data = pickGameInput(await req.json());
     const game = await updateGame(id, data, user.id);
     return NextResponse.json(game);
-  } catch (e: any) {
-    console.error("PUT /api/games error:", e.message);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    console.error("PUT /api/games error:", errorText(e));
+    return NextResponse.json({ error: errorText(e) }, { status: 500 });
   }
 }
 
@@ -34,7 +34,7 @@ export async function DELETE(
     const { id } = await params;
     await deleteGame(id, user.id);
     return new NextResponse(null, { status: 204 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: errorText(e) }, { status: 500 });
   }
 }

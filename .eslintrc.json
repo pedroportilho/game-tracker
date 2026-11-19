@@ -1,0 +1,8 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    // O site usa <img> de propósito (capas externas e logos locais já no
+    // tamanho certo); next/image não traria ganho aqui.
+    "@next/next/no-img-element": "off"
+  }
+}

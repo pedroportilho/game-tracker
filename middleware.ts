@@ -12,8 +12,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
-  accessCookieOptions,
-  refreshCookieOptions,
+  clearSessionCookies,
+  refreshSession,
+  setSessionCookies,
   type SessionTokens,
 } from "@/lib/authCookies";
 
@@ -26,33 +27,6 @@ function tokenExpiresAt(token: string): number | null {
     const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
     const { exp } = JSON.parse(atob(payload));
     return typeof exp === "number" ? exp : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Sessão nova, "invalid" se o refresh token não vale mais, null se falhou a rede. */
-async function refreshSession(
-  refreshToken: string,
-): Promise<SessionTokens | "invalid" | null> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
-      {
-        method: "POST",
-        headers: {
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-        cache: "no-store",
-      },
-    );
-    if (res.status === 400 || res.status === 401) return "invalid";
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data.access_token || !data.refresh_token) return null;
-    return data as SessionTokens;
   } catch {
     return null;
   }
@@ -107,8 +81,7 @@ export async function middleware(req: NextRequest) {
   let res: NextResponse;
   if (reauth) {
     res = NextResponse.next({ request: req });
-    res.cookies.set(ACCESS_COOKIE, "", { path: "/", maxAge: 0 });
-    res.cookies.set(REFRESH_COOKIE, "", { path: "/", maxAge: 0 });
+    clearSessionCookies(res.cookies);
     return res;
   } else if (!loggedIn && !isApi && !isLogin) {
     // Página protegida sem sessão → login, voltando para cá depois
@@ -130,17 +103,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // ── 3. Grava (ou limpa) os cookies no browser ────────────────────────────
-  if (session === "invalid") {
-    res.cookies.set(ACCESS_COOKIE, "", { path: "/", maxAge: 0 });
-    res.cookies.set(REFRESH_COOKIE, "", { path: "/", maxAge: 0 });
-  } else if (session) {
-    res.cookies.set(
-      ACCESS_COOKIE,
-      session.access_token,
-      accessCookieOptions(session.expires_in),
-    );
-    res.cookies.set(REFRESH_COOKIE, session.refresh_token, refreshCookieOptions);
-  }
+  if (session === "invalid") clearSessionCookies(res.cookies);
+  else if (session) setSessionCookies(res.cookies, session);
   return res;
 }
 

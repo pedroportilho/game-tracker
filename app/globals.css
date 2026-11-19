@@ -1,10 +1,161 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ═══════════════════════════════════════════════════════════════════════
+   Estilos globais: tokens do tema + reset.
+   Todo o resto fica em CSS Modules ao lado de cada página/componente.
+   ═══════════════════════════════════════════════════════════════════════ */
 
+/* ── Tokens ────────────────────────────────────────────────────────────
+   As cores base vêm do tema escolhido (lib/themes.ts), aplicado pelo layout
+   raiz num <style> que sobrescreve estes valores. Os valores daqui são os do
+   tema Padrão, usados se nada for aplicado. Tudo abaixo de "Derivados" é
+   calculado das cores base e vale para qualquer tema. */
+:root {
+  --bg: #07080d;
+  --surface: #0f1117;
+  --surface-2: #27272a;
+  --ink: #f4f4f8;
+  --muted: #94a3b8;
+  --dim: #5b6478;
+  --faint: #3f3f46;
+  --accent: #8b5cf6;
+  --accent-soft: #a78bfa;
+  --accent-ink: #ede9fe;
+  --mint: #34d399;
+  --red: #f87171;
+  --blue: #2f7bf5;
+  --sky: #38bdf8;
+  --yellow: #f5a623;
+  --pink: #e55b8d;
+  --shadow: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+
+  /* Derivados */
+  --line: color-mix(in srgb, var(--ink) 8%, transparent);
+  --line-soft: color-mix(in srgb, var(--ink) 6%, transparent);
+  --line-strong: color-mix(in srgb, var(--ink) 16%, transparent);
+  --hover: color-mix(in srgb, var(--ink) 5%, transparent);
+  /* parte de baixo do degradê dos botões principais */
+  --accent-strong: color-mix(in srgb, var(--accent) 78%, black);
+  /* brilho da cor de destaque no topo de todas as páginas */
+  --page-glow: radial-gradient(
+    1000px 500px at 0% -10%,
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    transparent 60%
+  );
+
+  /* Status dos jogos (lista, rosca do dashboard) */
+  --status-completed: var(--mint);
+  --status-backlog: var(--blue);
+  --status-on-hold: var(--yellow);
+  --status-playing: var(--pink);
+  --status-dropped: var(--dim);
+}
+
+/* ── Reset (o mesmo comportamento do preflight do Tailwind, que o site
+   usava antes) ───────────────────────────────────────────────────────── */
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  border: 0 solid;
+}
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+}
+
+body {
+  margin: 0;
+  line-height: inherit;
+  font-family: var(--font-body), system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+blockquote, dl, dd, h1, h2, h3, h4, h5, h6, hr, figure, p, pre {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+b, strong {
+  font-weight: bolder;
+}
+
+table {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse;
+}
+
+button, input, optgroup, select, textarea {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+button, [type="button"], [type="reset"], [type="submit"] {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+button, [role="button"] {
+  cursor: pointer;
+}
+
+:disabled {
+  cursor: default;
+}
+
+ol, ul, menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+fieldset { margin: 0; padding: 0; }
+legend { padding: 0; }
+textarea { resize: vertical; }
+summary { display: list-item; }
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+  color: var(--dim);
+}
+
+img, svg, video, canvas, audio, iframe, embed, object {
+  display: block;
+  vertical-align: middle;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+[hidden] {
+  display: none;
+}
+
+/* ── Detalhes ────────────────────────────────────────────────────────── */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a2a3a transparent;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -15,11 +166,11 @@
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: #2a2a3a;
+  background: var(--line-strong);
   border-radius: 99px;
 }
 
 ::selection {
-  background: rgba(124, 92, 252, 0.35);
-  color: #fff;
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--ink);
 }

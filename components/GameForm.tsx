@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, FormEvent, ReactNode } from "react";
-import type { Game } from "@/lib/supabase";
+import type { Game, GameInput } from "@/lib/gamesData";
+import type { IgdbGameDetails, IgdbSearchResult } from "@/lib/igdb";
+import { api, errorText } from "@/lib/api";
 import {
-  PLATFORMS,
   ACCOUNT_STATUSES,
   GENRES,
   GAME_STATUSES,
@@ -12,6 +13,9 @@ import {
   labelFor,
 } from "@/lib/constants";
 import { Search, X, Trophy } from "lucide-react";
+import { Button } from "@/components/ui";
+import { platformOptions } from "@/lib/settings";
+import { showError } from "@/components/ui/Toaster";
 import styles from "./GameForm.module.css";
 
 type GameFormState = {
@@ -39,14 +43,6 @@ type GameFormErrors = {
   [key: string]: string | undefined;
 };
 
-type IgdbSearchResult = {
-  id: number;
-  name: string;
-  cover?: string | null;
-  year?: number | null;
-  platforms?: string[];
-};
-
 type IgdbSearchProps = {
   onPick: (result: IgdbSearchResult) => void;
   currentIgdbId: number | null;
@@ -55,9 +51,11 @@ type IgdbSearchProps = {
 
 type GameFormProps = {
   initialData?: Partial<Game> | null;
-  onSubmit: (data: any) => void | Promise<void>;
+  onSubmit: (data: GameInput) => void | Promise<void>;
   onCancel: () => void;
   loading: boolean;
+  /** Plataformas escolhidas nas configurações (vazio = todas) */
+  platforms?: string[];
 };
 
 const EMPTY: GameFormState = {
@@ -103,13 +101,11 @@ function validate(form: GameFormState) {
   return e;
 }
 
-function mapIgdbGenres(igdbGenres: unknown) {
+// Gêneros da IGDB → os da nossa lista (os que não existem nela são ignorados)
+function mapIgdbGenres(igdbGenres: string[]) {
   const set = new Set(GENRES.map((g) => g.toLowerCase()));
   const out: string[] = [];
-  if (!Array.isArray(igdbGenres)) return out;
-  for (const g of igdbGenres) {
-    const name = typeof g === "string" ? g : (g as any)?.name;
-    if (!name) continue;
+  for (const name of igdbGenres) {
     if (set.has(name.toLowerCase())) {
       out.push(
         GENRES.find((x) => x.toLowerCase() === name.toLowerCase()) as string,
@@ -159,8 +155,15 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/igdb/search?q=${encodeURIComponent(q)}`);
-        if (res.ok) setResults(await res.json());
+        setResults(
+          await api<IgdbSearchResult[]>(
+            `/api/igdb/search?q=${encodeURIComponent(q)}`,
+            { errorMessage: "Não foi possível buscar na IGDB." },
+          ),
+        );
+      } catch (e) {
+        setResults([]);
+        showError(errorText(e));
       } finally {
         setLoading(false);
       }
@@ -251,8 +254,8 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
                     <p className={styles.resultName}>{r.name}</p>
                     <p className={styles.resultMeta}>
                       {r.year ?? "—"}
-                      {(r.platforms?.length ?? 0) > 0 &&
-                        ` · ${r.platforms!.slice(0, 3).join(", ")}`}
+                      {r.platforms.length > 0 &&
+                        ` · ${r.platforms.slice(0, 3).join(", ")}`}
                     </p>
                   </div>
                 </button>
@@ -269,6 +272,7 @@ export function GameForm({
   onSubmit,
   onCancel,
   loading,
+  platforms = [],
 }: GameFormProps) {
   const [form, setForm] = useState<GameFormState>(() => {
     if (!initialData) return EMPTY;
@@ -298,24 +302,27 @@ export function GameForm({
     val: GameFormState[keyof GameFormState],
   ) => setForm((f) => ({ ...f, [key]: val }));
 
-  async function handlePickIgdb(result) {
+  async function handlePickIgdb(result: IgdbSearchResult) {
     try {
-      const res = await fetch(`/api/igdb/games/${result.id}`);
-      const data = res.ok ? await res.json() : null;
+      const data = await api<IgdbGameDetails>(`/api/igdb/games/${result.id}`, {
+        errorMessage: "Não foi possível carregar os detalhes do jogo na IGDB.",
+      });
       setForm((f) => ({
         ...f,
         igdb_id: result.id, // número, não string
-        title: data?.name ?? result.name ?? f.title,
-        genres: data?.genres ? mapIgdbGenres(data.genres) : f.genres,
-        cover: data?.cover ?? f.cover,
-        themes: data?.themes ?? f.themes,
+        title: data.name ?? result.name ?? f.title,
+        genres: data.genres.length ? mapIgdbGenres(data.genres) : f.genres,
+        cover: data.cover ?? f.cover,
+        themes: data.themes.length ? data.themes : f.themes,
       }));
-    } catch {
+    } catch (e) {
+      // Vincula mesmo assim, só com o que veio na busca
       setForm((f) => ({
         ...f,
         igdb_id: result.id,
         title: result.name ?? f.title,
       }));
+      showError(errorText(e));
     }
   }
 
@@ -369,7 +376,7 @@ export function GameForm({
             onChange={(e) => set("platform", e.target.value)}
           >
             <option value="">Selecione…</option>
-            {PLATFORMS.map((p) => (
+            {platformOptions(platforms, [initialData?.platform]).map((p) => (
               <option key={p}>{p}</option>
             ))}
           </select>
@@ -446,17 +453,12 @@ export function GameForm({
       </Field>
 
       <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.btnGhost}
-          onClick={onCancel}
-          disabled={loading}
-        >
+        <Button variant="ghost" onClick={onCancel} disabled={loading}>
           Cancelar
-        </button>
-        <button type="submit" className={styles.btnPrimary} disabled={loading}>
+        </Button>
+        <Button type="submit" variant="primary" disabled={loading}>
           {loading ? "Salvando…" : initialData ? "Salvar alterações" : "Adicionar jogo"}
-        </button>
+        </Button>
       </div>
     </form>
   );

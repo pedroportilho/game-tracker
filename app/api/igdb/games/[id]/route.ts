@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { getGame, igdbImageUrl } from "@/lib/igdb";
+import { getGame, toGameDetails } from "@/lib/igdb";
 import { getUserFromRequest } from "@/lib/auth";
+import { errorText } from "@/lib/errors";
 
-export async function GET(request, { params }) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   // Só usuários logados: sem isso qualquer um usaria nossa cota da IGDB
   const user = await getUserFromRequest(request);
   if (!user)
@@ -12,38 +16,14 @@ export async function GET(request, { params }) {
     const { id } = await params;
     if (!/^\d+$/.test(id))
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+
     const game = await getGame(id);
     if (!game)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const companies = game.involved_companies ?? [];
-    const trimmed = {
-      id: game.id,
-      name: game.name,
-      summary: game.summary ?? null,
-      storyline: game.storyline ?? null,
-      url: game.url ?? null,
-      releaseDate: game.first_release_date
-        ? new Date(game.first_release_date * 1000).toISOString().slice(0, 10)
-        : null,
-      cover: igdbImageUrl(game.cover?.url, "cover_big"),
-      genres: (game.genres ?? []).map((g) => g.name),
-      themes: (game.themes ?? []).map((t) => t.name),
-      platforms: (game.platforms ?? [])
-        .map((p) => p.name || p.abbreviation)
-        .filter(Boolean),
-      developers: companies
-        .filter((c) => c.developer)
-        .map((c) => c.company?.name)
-        .filter(Boolean),
-      publishers: companies
-        .filter((c) => c.publisher)
-        .map((c) => c.company?.name)
-        .filter(Boolean),
-    };
-    return NextResponse.json(trimmed);
+    return NextResponse.json(toGameDetails(game));
   } catch (err) {
     console.error("GET /api/igdb/games/[id]:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorText(err) }, { status: 500 });
   }
 }

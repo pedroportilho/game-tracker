@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, createAuthClient } from "@/lib/supabaseAdmin";
 import { getAccessTokenFromRequest } from "@/lib/auth";
+import { errorText } from "@/lib/errors";
 import {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
@@ -64,8 +65,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const result: any = { user: { id: data.user.id, email: data.user.email } };
-    const nextResponse = NextResponse.json(result);
+    const nextResponse = NextResponse.json({
+      user: { id: data.user.id, email: data.user.email },
+    });
     nextResponse.cookies.set(
       ACCESS_COOKIE,
       data.session.access_token,
@@ -80,9 +82,9 @@ export async function POST(req: Request) {
     }
 
     return nextResponse;
-  } catch (e: any) {
+  } catch (e) {
     return NextResponse.json(
-      { error: e.message ?? "Login error" },
+      { error: errorText(e, "Login error") },
       { status: 500 },
     );
   }

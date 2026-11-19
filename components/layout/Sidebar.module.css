@@ -1,0 +1,286 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Sidebar (desktop, colapsável) e MobileHeader (celular: logo + abas)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Desktop ─────────────────────────────────────────────────────────── */
+.sidebar {
+  display: none;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  width: 232px;
+  height: 100vh;
+  padding: 24px 16px;
+  overflow: hidden;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  transition: width 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    display: flex;
+  }
+}
+
+.collapsed {
+  width: 68px;
+  padding: 24px 10px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  padding: 0 0.75rem;
+}
+
+.logo img {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+}
+
+.collapsed .logo {
+  justify-content: center;
+  padding: 0;
+}
+
+.collapsed .logo img {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.sectionLabel {
+  margin-bottom: 0.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* Recolhida, o rótulo vira uma linha fina */
+.sectionRule {
+  height: 1px;
+  margin: 0 0.5rem 0.75rem;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--dim);
+  white-space: nowrap;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: var(--ink);
+}
+
+.collapsed .link {
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+}
+
+.linkActive,
+.linkActive:hover {
+  font-weight: 600;
+  color: var(--ink);
+  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 10%, transparent), transparent);
+}
+
+/* Barrinha do item ativo */
+.linkActive::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 1.25rem;
+  transform: translateY(-50%);
+  background: var(--accent);
+  border-radius: 0 9999px 9999px 0;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+.linkIcon {
+  flex-shrink: 0;
+  color: var(--dim);
+}
+
+.linkIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.linkActive .linkIcon {
+  color: var(--accent-soft);
+}
+
+.linkText {
+  overflow: hidden;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.footerBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: var(--dim);
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.footerBtn:hover {
+  color: var(--ink);
+}
+
+.footerActive,
+.footerActive:hover {
+  color: var(--ink);
+}
+
+.collapsed .footerBtn {
+  justify-content: center;
+}
+
+.chevron {
+  transition: transform 0.3s ease;
+}
+
+.collapsed .chevron {
+  transform: rotate(180deg);
+}
+
+.logout {
+  color: color-mix(in srgb, var(--red) 80%, transparent);
+}
+
+.logout:hover {
+  color: var(--red);
+}
+
+/* ── Celular ─────────────────────────────────────────────────────────── */
+.mobile {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(24px);
+}
+
+@media (min-width: 768px) {
+  .mobile {
+    display: none;
+  }
+}
+
+.mobileTop {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 0.25rem;
+}
+
+.mobileTop img {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.mobileTitle {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.mobileAction {
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+/* Empurra os ícones (configurações, sair) para a direita */
+.mobileSettings {
+  margin-left: auto;
+  color: var(--dim);
+}
+
+.mobileSettings:hover {
+  color: var(--ink);
+}
+
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  padding: 0 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin-bottom: -1px;
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  color: var(--dim);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tabActive,
+.tabActive:hover {
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.tab .linkIcon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.tabActive .linkIcon {
+  color: var(--accent-soft);
+}

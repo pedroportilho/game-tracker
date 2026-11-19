@@ -1,61 +1,30 @@
-"use client";
-
-import { useRef } from "react";
+import Link from "next/link";
 import { formatGameDate } from "@/lib/constants";
-import type { Game } from "@/lib/supabase";
+import type { Game } from "@/lib/gamesData";
+import styles from "./RecentCarousel.module.css";
 
 type Props = {
   games: Game[];
 };
 
 export function RecentCarousel({ games }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
   return (
-    <div className="min-w-0 overflow-hidden">
-      <div
-        ref={scrollRef}
-        className="flex gap-2 items-start overflow-x-auto pb-2 scroll-smooth"
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "#3f3f46 transparent",
-        }}
-      >
+    <div className={styles.wrap}>
+      <div className={styles.track}>
         {games.map((game) => (
-          <div
-            key={game.id}
-            className="group flex-none"
-            style={{ width: "160px" }}
-          >
-            <div
-              className="rounded-xl overflow-hidden bg-zinc-800 border border-white/8 mb-2 relative w-full"
-              style={{ aspectRatio: "3 / 4" }}
-            >
+          <div key={game.id} className={styles.card}>
+            <Link href={`/games/${game.id}`} className={styles.cover}>
               {game.cover ? (
-                <a href={`/games/${game.id}`} className="absolute inset-0">
-                  <img
-                    src={game.cover}
-                    alt={game.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </a>
+                <img src={game.cover} alt={game.title} loading="lazy" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-zinc-600 text-xs text-center px-2">
-                    <a href={`/games/${game.id}`} className="hover:underline">
-                      {game.title}
-                    </a>
-                  </span>
-                </div>
+                <span className={styles.coverEmpty}>{game.title}</span>
               )}
-            </div>
+            </Link>
 
-            <p className="text-xs font-semibold text-zinc-200 truncate leading-snug">
-              <a href={`/games/${game.id}`} className="hover:underline">
-                {game.title}
-              </a>
+            <p className={styles.title}>
+              <Link href={`/games/${game.id}`}>{game.title}</Link>
             </p>
-            <p className="text-[11px] text-zinc-600 mt-0.5 truncate">
+            <p className={styles.meta}>
               {game.platform} · {formatGameDate(game.date)}
             </p>
           </div>

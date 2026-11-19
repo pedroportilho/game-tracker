@@ -111,7 +111,7 @@ export function toMatrix(section: ChecklistSection) {
     const group = item.group_label ?? "";
     let row = rows.find((r) => r.group === group);
     if (!row) {
-      row = { group, cells: columns.map(() => null) };
+      row = { group, cells: columns.map((): ChecklistItem | null => null) };
       rows.push(row);
     }
     row.cells[columns.findIndex((c) => c.label === item.label)] = item;

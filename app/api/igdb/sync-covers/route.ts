@@ -2,21 +2,31 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getGame, igdbImageUrl } from "@/lib/igdb";
 import { getUserFromRequest } from "@/lib/auth";
+import { errorText } from "@/lib/errors";
+import type { Game } from "@/lib/gamesData";
 
+// POST /api/igdb/sync-covers — manutenção, só para administradores.
+// Preenche capa e temas dos jogos (do próprio admin) vinculados à IGDB que
+// ainda não os têm. Jogos adicionados pelo formulário já vêm com os dois;
+// isto serve para dados antigos ou importados. Faz uma consulta à IGDB por
+// jogo (usa a cota das chaves do site), por isso não fica aberto a todos.
 export async function POST(req: Request) {
-  // Antes não exigia login e mexia nos jogos de TODOS os usuários.
   const user = await getUserFromRequest(req);
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user.isAdmin)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
-    // Jogos DO USUÁRIO que têm igdb_id mas faltam cover ou themes
+    // Jogos com igdb_id sem capa ou com temas nunca consultados.
+    // themes null = nunca consultado; [] = consultado e a IGDB não tem
+    // nenhum — esses não entram, senão seriam reconsultados a cada clique.
     const { data: games, error } = await supabaseAdmin
       .from("games")
       .select("id, igdb_id, cover, themes")
       .eq("user_id", user.id)
       .not("igdb_id", "is", null)
-      .or("cover.is.null,themes.is.null,themes.eq.{}");
+      .or("cover.is.null,themes.is.null");
 
     if (error) throw new Error(error.message);
     if (!games || games.length === 0) {
@@ -32,12 +42,12 @@ export async function POST(req: Request) {
         if (!igdbData) continue;
 
         const cover_url = igdbImageUrl(igdbData.cover?.url, "cover_big");
-        const themes = (igdbData.themes ?? []).map((t: any) => t.name);
+        const themes = (igdbData.themes ?? []).map((t) => t.name);
 
-        const patch: Record<string, any> = {};
+        const patch: Partial<Pick<Game, "cover" | "themes">> = {};
         if (!game.cover && cover_url) patch.cover = cover_url;
-        if ((!game.themes || game.themes.length === 0) && themes.length > 0)
-          patch.themes = themes;
+        // Grava mesmo vazio: marca como consultado
+        if (game.themes == null) patch.themes = themes;
 
         if (Object.keys(patch).length === 0) continue;
 
@@ -49,8 +59,8 @@ export async function POST(req: Request) {
 
         if (updateError) throw new Error(updateError.message);
         updated++;
-      } catch (err: any) {
-        errors.push({ id: game.id, error: err.message });
+      } catch (err) {
+        errors.push({ id: game.id, error: errorText(err) });
       }
     }
 
@@ -59,8 +69,8 @@ export async function POST(req: Request) {
       skipped: games.length - updated - errors.length,
       errors: errors.length > 0 ? errors : undefined,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("POST /api/igdb/sync-covers:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorText(err) }, { status: 500 });
   }
 }

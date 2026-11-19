@@ -2,36 +2,39 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Modal } from "@/components/ui";
-import { sessionExpired } from "@/lib/authClient";
-import { GameForm } from "@/components/GameForm";
 import { Pencil } from "lucide-react";
-import styles from "./GameForm.module.css";
+import { Button, Modal } from "@/components/ui";
+import { showError } from "@/components/ui/Toaster";
+import { GameForm } from "@/components/GameForm";
+import { api, errorText } from "@/lib/api";
+import type { Game, GameInput } from "@/lib/gamesData";
 
-export function GameEditButton({ game }) {
+// Botão "Editar jogo" da página de um jogo (app/games/[id]).
+export function GameEditButton({
+  game,
+  platforms,
+}: {
+  game: Game;
+  /** Plataformas escolhidas nas configurações (vazio = todas) */
+  platforms: string[];
+}) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
-  async function handleEdit(data) {
+  async function handleEdit(data: GameInput) {
     setSaving(true);
     try {
-      const res = await fetch(`/api/games/${game.id}`, {
+      await api(`/api/games/${game.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: data,
+        errorMessage: "Não foi possível salvar as alterações.",
       });
-      if (res.status === 401) {
-        setOpen(false);
-        sessionExpired();
-        return;
-      }
-      if (!res.ok) throw new Error("Não foi possível salvar as alterações.");
       setOpen(false);
-      // Revalida a página para mostrar os dados atualizados
+      // Busca a página de novo no servidor para mostrar os dados atualizados
       router.refresh();
     } catch (e) {
-      alert(e.message);
+      showError(errorText(e));
     } finally {
       setSaving(false);
     }
@@ -39,14 +42,10 @@ export function GameEditButton({ game }) {
 
   return (
     <>
-      <button
-        type="button"
-        className={styles.editBtn}
-        onClick={() => setOpen(true)}
-      >
-        <Pencil className={styles.editIcon} />
-        <span>Editar jogo</span>
-      </button>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <Pencil />
+        Editar jogo
+      </Button>
 
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Editar jogo">
         <GameForm
@@ -54,6 +53,7 @@ export function GameEditButton({ game }) {
           onSubmit={handleEdit}
           onCancel={() => setOpen(false)}
           loading={saving}
+          platforms={platforms}
         />
       </Modal>
     </>

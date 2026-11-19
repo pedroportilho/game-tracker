@@ -1,0 +1,388 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Dashboard — redesign "editorial / sem caixas"
+   Ideia: nada de cards. A hierarquia vem de tipografia grande, linhas finas
+   e espaçamento. Coluna principal à esquerda, "rail" de status à direita.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Page shell ─────────────────────────────────────────────────────── */
+
+/* ── KPI strip (números grandes, separados por linhas finas) ─────────── */
+
+/* ── Layout: coluna principal + rail ─────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.75rem;
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+    gap: 3rem;
+  }
+  .rail {
+    border-left: 1px solid var(--line);
+    padding-left: 3rem;
+  }
+}
+
+.primary {
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+  min-width: 0;
+}
+
+.rail {
+  --label-w: 6.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-width: 0;
+}
+
+.block {
+  min-width: 0;
+}
+
+/* ── Títulos de seção (rótulo + linha fina) ──────────────────────────── */
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+}
+
+.sectionTitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ── Recent activity (sem caixa) ─────────────────────────────────────── */
+.recentSection {
+  min-width: 0;
+}
+
+/* ── Linhas de ranking (plataformas, gêneros, temas) ─────────────────── */
+.rankList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.rankRow {
+  display: grid;
+  grid-template-columns: var(--label-w, 8.5rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.rankLabel {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rankTrack {
+  height: 8px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  overflow: hidden;
+}
+
+.rankFill {
+  position: relative;
+  height: 100%;
+  min-width: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+  transition: width 0.5s ease;
+}
+
+/* Platina = parte do que está dentro da barra roxa */
+.rankFillPlat {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 9999px;
+  background: var(--mint);
+}
+
+.rankNums {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  min-width: 3rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.rankPlat {
+  color: var(--mint);
+}
+
+.barChartEmpty {
+  font-size: 0.8125rem;
+  color: var(--dim);
+  padding: 0.5rem 0;
+}
+
+/* ── GenreThemeChart: cabeçalho, abas, legenda ───────────────────────── */
+.blockHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.blockHeader .sectionTitle {
+  flex: 1;
+  margin: 0;
+}
+
+.chartTabGroup {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.chartTab {
+  position: relative;
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 2px solid transparent;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.chartTab:hover {
+  color: var(--muted);
+}
+
+.chartTab:focus-within {
+  color: var(--ink);
+}
+
+.chartTabActive {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+/* input escondido visualmente, mas ainda focável por teclado */
+.chartTabInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.barChartLegend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.4rem;
+}
+
+.legendDotPurple,
+.legendDotGreen {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.legendDotPurple {
+  background: var(--accent);
+}
+.legendDotGreen {
+  background: var(--mint);
+}
+
+.legendLabel {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-right: 0.75rem;
+}
+
+/* ── Account status: barra segmentada + legenda ──────────────────────── */
+.segBar {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+  margin-bottom: 1.25rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.segBar > span {
+  height: 100%;
+  min-width: 6px;
+  border-radius: 9999px;
+  transition: flex-grow 0.5s ease;
+}
+
+.segLegend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.segItem {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.segDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+}
+
+.segCount {
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tGreen {
+  background: var(--mint);
+}
+.tBlue {
+  background: var(--sky);
+}
+.tLime {
+  background: var(--yellow);
+}
+.tRed {
+  background: var(--red);
+}
+
+/* ── StatusDonut (sem caixa) ─────────────────────────────────────────── */
+.donutWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.donutCanvasWrapper {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  flex-shrink: 0;
+  max-width: 100%;
+  filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 20%, transparent));
+}
+
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.donutTotal {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.donutTotalLabel {
+  margin-top: 4px;
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.donutLegend {
+  flex: 1;
+  min-width: 170px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.donutLegendItem {
+  display: grid;
+  grid-template-columns: 8px 1fr auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.donutLegendItem:last-child {
+  border-bottom: 0;
+}
+
+.donutLegendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.donutLegendLabel {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.donutLegendCount {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.donutLegendPct {
+  width: 2.75rem;
+  font-size: 0.6875rem;
+  color: var(--dim);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

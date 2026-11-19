@@ -1,0 +1,325 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Series — mesmo estilo "editorial / sem caixas"
+   Cada série é uma linha expansível: nome grande, porcentagem e barra fina.
+   Ao abrir, os jogos aparecem como lista (arrastar, marcar, adicionar).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Shell ───────────────────────────────────────────────────────────── */
+
+.iconSm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.iconXs {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+
+/* No celular o título já aparece na barra superior */
+
+.addLabel {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .addLabel {
+    display: inline;
+  }
+}
+
+/* ── Faixa de números ────────────────────────────────────────────────── */
+
+/* ── Vazio ──────────────────────────────────────────────────────────── */
+.empty {
+  padding: 3rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--dim);
+}
+
+/* ── Lista de séries ─────────────────────────────────────────────────── */
+.seriesList {
+  display: flex;
+  flex-direction: column;
+}
+
+.series + .series {
+  border-top: 1px solid var(--line);
+}
+
+/* Cabeçalho da série (botão que abre/fecha) */
+.seriesToggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem 1.5rem;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.25rem 0.25rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .seriesToggle {
+    grid-template-columns: minmax(0, 1fr) 11rem 1.5rem;
+    gap: 2rem;
+    padding: 1.5rem 0.5rem;
+  }
+}
+
+.seriesToggle:hover {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%);
+}
+
+.seriesToggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+.seriesName {
+  display: block;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.25rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 768px) {
+  .seriesName {
+    font-size: 1.625rem;
+  }
+}
+
+.seriesMeta {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--dim);
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.pct {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.pctDone {
+  color: var(--mint);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--mint) 35%, transparent);
+}
+
+.chevron {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--dim);
+  transition: transform 0.25s ease, color 0.15s;
+}
+
+.seriesToggle:hover .chevron {
+  color: var(--ink);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Jogos da série (expandido) ──────────────────────────────────────── */
+.entries {
+  padding: 0 0 1.5rem 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .entries {
+    padding: 0 0.5rem 2rem;
+  }
+}
+
+.entryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.65rem 0.25rem;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.entry:hover {
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.entryDragging {
+  background: var(--surface);
+  box-shadow: 0 16px 40px -12px var(--shadow);
+}
+
+.handle {
+  display: flex;
+  flex-shrink: 0;
+  padding: 0.25rem;
+  color: var(--dim);
+  background: none;
+  border: 0;
+  cursor: grab;
+  touch-action: none;
+  transition: color 0.15s;
+}
+
+.handle:hover {
+  color: var(--muted);
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--bg);
+  background: transparent;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.check:hover:not(:disabled) {
+  border-color: var(--mint);
+}
+
+.check:disabled {
+  cursor: default;
+}
+
+.checkOn {
+  background: var(--mint);
+  border-color: var(--mint);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--mint) 45%, transparent);
+}
+
+.checkIcon {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.entryTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9375rem;
+  color: var(--ink);
+  transition: color 0.15s;
+}
+
+.entryTitleDone {
+  color: var(--dim);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+/* ── Adicionar jogo na série ─────────────────────────────────────────── */
+.addRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.9rem 0.25rem 0;
+}
+
+.addLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--dim);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.addLink:hover {
+  color: var(--accent-soft);
+}
+
+/* ── Campos e botões (inline e modal) ────────────────────────────────── */
+.control {
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.25rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--ink);
+  color-scheme: dark;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.control::placeholder {
+  color: var(--dim);
+}
+
+.control:focus {
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1px 0 0 var(--accent);
+}
+
+.addInput {
+  flex: 1 1 12rem;
+}
+
+/* ── Modal: nova série ───────────────────────────────────────────────── */
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  color: var(--ink);
+}
+
+.modalActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

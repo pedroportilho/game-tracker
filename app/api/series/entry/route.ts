@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
-import { addSeriesEntry, toggleSeriesEntry } from "@/lib/supabase";
+import { errorText } from "@/lib/errors";
+import { addSeriesEntry, toggleSeriesEntry } from "@/lib/seriesData";
 
 export async function PATCH(req: Request) {
   const user = await getUserFromRequest(req);
@@ -11,8 +12,8 @@ export async function PATCH(req: Request) {
     const { id, completed } = await req.json();
     await toggleSeriesEntry(Number(id), completed, user.id);
     return new NextResponse(null, { status: 204 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: errorText(e) }, { status: 500 });
   }
 }
 
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
     const { seriesId, title } = await req.json();
     const entry = await addSeriesEntry(Number(seriesId), title, user.id);
     return NextResponse.json(entry, { status: 201 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: errorText(e) }, { status: 500 });
   }
 }

@@ -1,3 +1,7 @@
+// Nome do site e subtítulo (aba do navegador, login, sidebar, exportação)
+export const APP_NAME = "Ludora";
+export const APP_TAGLINE = "Seus jogos até os 100%";
+
 export const PLATFORMS = [
   "3DS",
   "DS",
@@ -69,29 +73,6 @@ export const GENRES = [
   "Hack and slash/Beat 'em up",
   "Quiz/Trivia",
 ];
-
-export const STATUS_STYLES = {
-  Preserved: {
-    bg: "bg-emerald-900/40",
-    text: "text-emerald-400",
-    border: "border-emerald-700/30",
-  },
-  Lost: {
-    bg: "bg-red-900/40",
-    text: "text-red-400",
-    border: "border-red-700/30",
-  },
-  "Re-earned": {
-    bg: "bg-blue-900/40",
-    text: "text-blue-400",
-    border: "border-blue-700/30",
-  },
-  Unverified: {
-    bg: "bg-zinc-800",
-    text: "text-zinc-400",
-    border: "border-zinc-700/30",
-  },
-};
 
 // ─── Rótulos em pt-BR ─────────────────────────────────────────────────────────
 // Os valores no banco continuam em inglês (filtros, IGDB e dados existentes
@@ -187,13 +168,6 @@ export function formatNumber(value: number, fractionDigits = 0) {
 export function formatPercent(fraction: number) {
   const v = Math.round(fraction * 1000) / 10;
   return formatNumber(v, Number.isInteger(v) ? 0 : 1);
-}
-
-/** Data da IGDB (timestamp em segundos) → "DD/MM/AAAA". */
-export function formatUnixDate(seconds: number) {
-  return new Date(seconds * 1000).toLocaleDateString("pt-BR", {
-    timeZone: "UTC",
-  });
 }
 
 // Data de conclusão: o banco guarda ISO `YYYY-MM-DD`; exibimos `DD/MM/AAAA`.

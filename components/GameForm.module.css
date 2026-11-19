@@ -1,50 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   GameForm + GameEditButton — CSS compartilhado
-   Campos só com sublinhado, rótulos pequenos em caixa-alta, sem caixas.
-   Os tokens são redeclarados aqui porque o formulário aparece dentro de
-   um Modal (fora do container da página), onde as variáveis das páginas
-   não existem.
+   GameForm — campos só com sublinhado, rótulos pequenos em caixa-alta,
+   sem caixas. Os botões são o <Button> de components/ui.
    ═══════════════════════════════════════════════════════════════════════ */
-
-.form,
-.editBtn {
-  --ink: #f4f4f8;
-  --muted: #94a3b8;
-  --dim: #5b6478;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --purple: #8b5cf6;
-  --purple-soft: #a78bfa;
-  --mint: #34d399;
-  --danger: #f87171;
-}
-
-/* ── Botão "Edit game" (GameEditButton) ──────────────────────────────── */
-.editBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--ink);
-  background: transparent;
-  border: 1px solid var(--line-strong);
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
-}
-
-.editBtn:hover {
-  border-color: rgba(139, 92, 246, 0.6);
-  background: rgba(139, 92, 246, 0.1);
-  color: #ede9fe;
-}
-
-.editIcon {
-  width: 1rem;
-  height: 1rem;
-}
 
 /* ── Formulário ──────────────────────────────────────────────────────── */
 .form {
@@ -107,12 +64,12 @@
 }
 
 .control:focus {
-  border-bottom-color: var(--purple);
-  box-shadow: 0 1px 0 0 var(--purple);
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1px 0 0 var(--accent);
 }
 
 .control option {
-  background: #0d0f14;
+  background: var(--surface);
   color: var(--ink);
 }
 
@@ -136,16 +93,16 @@ select.control {
 }
 
 .hasError .control {
-  border-bottom-color: var(--danger);
+  border-bottom-color: var(--red);
 }
 
 .hasError .control:focus {
-  box-shadow: 0 1px 0 0 var(--danger);
+  box-shadow: 0 1px 0 0 var(--red);
 }
 
 .error {
   font-size: 0.6875rem;
-  color: var(--danger);
+  color: var(--red);
 }
 
 /* ── Platinum (checkbox com troféu) ──────────────────────────────────── */
@@ -184,7 +141,7 @@ select.control {
 
 .platinumInput:checked + .platinumIcon {
   color: var(--mint);
-  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.6));
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mint) 60%, transparent));
 }
 
 .platinumInput:checked ~ .platinumText {
@@ -192,7 +149,7 @@ select.control {
 }
 
 .platinumInput:focus-visible + .platinumIcon {
-  outline: 2px solid var(--purple);
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -216,7 +173,7 @@ select.control {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: none;
-  color: var(--purple-soft);
+  color: var(--accent-soft);
 }
 
 .lookupWrap {
@@ -271,10 +228,10 @@ select.control {
   max-height: 18rem;
   overflow-y: auto;
   padding: 0.25rem;
-  background: #0d0f14;
+  background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: 12px;
-  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 24px 48px -16px var(--shadow);
 }
 
 .dropdownMsg {
@@ -299,7 +256,7 @@ select.control {
 }
 
 .result:hover {
-  background: rgba(139, 92, 246, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .resultCover,
@@ -315,7 +272,7 @@ select.control {
 }
 
 .resultCoverEmpty {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
 .resultText {
@@ -345,44 +302,4 @@ select.control {
   justify-content: flex-end;
   gap: 0.5rem;
   padding-top: 0.5rem;
-}
-
-.btnGhost,
-.btnPrimary {
-  font-family: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  border: 0;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: color 0.15s, filter 0.15s, transform 0.15s, opacity 0.15s;
-}
-
-.btnGhost {
-  padding: 0.6rem 1rem;
-  color: var(--muted);
-  background: transparent;
-}
-
-.btnGhost:hover:not(:disabled) {
-  color: var(--ink);
-}
-
-.btnPrimary {
-  padding: 0.6rem 1.5rem;
-  font-weight: 700;
-  color: #ede9fe;
-  background: linear-gradient(180deg, #7c3aed, #6d28d9);
-  box-shadow: 0 8px 24px -10px rgba(139, 92, 246, 0.8);
-}
-
-.btnPrimary:hover:not(:disabled) {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
-}
-
-.btnGhost:disabled,
-.btnPrimary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
