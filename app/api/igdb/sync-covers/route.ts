@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getGame, igdbImageUrl } from "@/lib/igdb";
+import { getUserFromRequest } from "@/lib/auth";
 
-export async function POST() {
+export async function POST(req: Request) {
+  // Antes não exigia login e mexia nos jogos de TODOS os usuários.
+  const user = await getUserFromRequest(req);
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
-    // Busca todos os jogos que têm igdb_id mas faltam cover ou themes
+    // Jogos DO USUÁRIO que têm igdb_id mas faltam cover ou themes
     const { data: games, error } = await supabaseAdmin
       .from("games")
       .select("id, igdb_id, cover, themes")
+      .eq("user_id", user.id)
       .not("igdb_id", "is", null)
       .or("cover.is.null,themes.is.null,themes.eq.{}");
 
@@ -37,7 +44,8 @@ export async function POST() {
         const { error: updateError } = await supabaseAdmin
           .from("games")
           .update(patch)
-          .eq("id", game.id);
+          .eq("id", game.id)
+          .eq("user_id", user.id);
 
         if (updateError) throw new Error(updateError.message);
         updated++;

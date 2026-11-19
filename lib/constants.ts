@@ -93,58 +93,114 @@ export const STATUS_STYLES = {
   },
 };
 
-// Excel serial → JS Date in UTC (avoids timezone shifting the year)
-function serialToUTCDate(serial) {
-  if (!serial || isNaN(serial)) return null;
-  const ms = Math.round((parseFloat(serial) - 25569) * 86400 * 1000);
-  return new Date(ms);
+// ─── Rótulos em pt-BR ─────────────────────────────────────────────────────────
+// Os valores no banco continuam em inglês (filtros, IGDB e dados existentes
+// dependem deles); estes mapas só traduzem o que aparece na tela.
+
+export const ACCOUNT_STATUS_LABELS: Record<string, string> = {
+  Preserved: "Preservado",
+  Lost: "Perdido",
+  "Re-earned": "Reconquistado",
+  Unverified: "Não verificado",
+};
+
+export const GAME_STATUS_LABELS: Record<string, string> = {
+  Playing: "Jogando",
+  Completed: "Concluído",
+  "On Hold": "Pausado",
+  Dropped: "Abandonado",
+  Backlog: "Na fila",
+};
+
+// Gêneros e temas vêm da IGDB (em inglês)
+export const GENRE_LABELS: Record<string, string> = {
+  Pinball: "Pinball",
+  Adventure: "Aventura",
+  Indie: "Indie",
+  Arcade: "Arcade",
+  "Visual Novel": "Visual Novel",
+  "Card & Board Game": "Cartas e tabuleiro",
+  MOBA: "MOBA",
+  "Point-and-click": "Point-and-click",
+  Fighting: "Luta",
+  Shooter: "Tiro",
+  Music: "Música",
+  Platform: "Plataforma",
+  Puzzle: "Quebra-cabeça",
+  Racing: "Corrida",
+  "Real Time Strategy (RTS)": "Estratégia em tempo real (RTS)",
+  "Role-playing (RPG)": "RPG",
+  Simulator: "Simulação",
+  Sport: "Esporte",
+  Strategy: "Estratégia",
+  "Turn-based strategy (TBS)": "Estratégia por turnos (TBS)",
+  Tactical: "Tático",
+  "Hack and slash/Beat 'em up": "Hack and slash / Beat 'em up",
+  "Quiz/Trivia": "Quiz / Perguntas",
+};
+
+export const THEME_LABELS: Record<string, string> = {
+  Action: "Ação",
+  Fantasy: "Fantasia",
+  "Science fiction": "Ficção científica",
+  Horror: "Terror",
+  Thriller: "Suspense",
+  Survival: "Sobrevivência",
+  Historical: "Histórico",
+  Stealth: "Furtividade",
+  Comedy: "Comédia",
+  Business: "Negócios",
+  Drama: "Drama",
+  "Non-fiction": "Não ficção",
+  Sandbox: "Sandbox",
+  Educational: "Educativo",
+  Kids: "Infantil",
+  "Open world": "Mundo aberto",
+  Warfare: "Guerra",
+  Party: "Party",
+  "4X (explore, expand, exploit, and exterminate)": "4X",
+  Erotic: "Erótico",
+  Mystery: "Mistério",
+  Romance: "Romance",
+};
+
+/** Rótulo traduzido; se não houver tradução, mostra o valor original. */
+export function labelFor(map: Record<string, string>, value?: string | null) {
+  if (!value) return "";
+  return map[value] ?? value;
 }
 
-// Excel serial date → year number
-export function serialToYear(serial) {
-  const date = serialToUTCDate(serial);
-  if (!date) return null;
-  return date.getUTCFullYear();
+// ─── Formatos brasileiros ─────────────────────────────────────────────────────
+
+/** Número com vírgula decimal: 23.7 → "23,7". */
+export function formatNumber(value: number, fractionDigits = 0) {
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
 }
 
-// Excel serial date → formatted date string (e.g. "Mar 2019")
-export function serialToDate(serial) {
-  const date = serialToUTCDate(serial);
-  if (!date) return null;
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
+/**
+ * Fração 0..1 → porcentagem com uma casa: 0.237 → "23,7"; inteiros sem
+ * decimal: 0.75 → "75", 1 → "100". Usado em todas as porcentagens do site.
+ */
+export function formatPercent(fraction: number) {
+  const v = Math.round(fraction * 1000) / 10;
+  return formatNumber(v, Number.isInteger(v) ? 0 : 1);
+}
+
+/** Data da IGDB (timestamp em segundos) → "DD/MM/AAAA". */
+export function formatUnixDate(seconds: number) {
+  return new Date(seconds * 1000).toLocaleDateString("pt-BR", {
     timeZone: "UTC",
   });
 }
 
-export function formatCompletion(val) {
-  if (val == null || val === "") return null;
-  return Math.round(parseFloat(val) * 100);
-}
-
-// Canonical date display for game completion dates: "May 2024" style.
-// Accepts ISO `YYYY-MM-DD`, legacy `DD/MM/YYYY`, or `Mon YYYY` strings.
-export function formatGameDate(value) {
+// Data de conclusão: o banco guarda ISO `YYYY-MM-DD`; exibimos `DD/MM/AAAA`.
+// (Os formatos da época da planilha — serial do Excel, "Mon YYYY" — não
+// existem mais no banco.)
+export function formatGameDate(value: string | null | undefined) {
   if (!value) return null;
-  if (typeof value === "string") {
-    if (/^[A-Za-z]{3}\s\d{4}$/.test(value)) return value;
-    let date;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [y, m, d] = value.split("-");
-      return `${d}/${m}/${y}`;
-    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-      const [d, m, y] = value.split("/");
-      date = new Date(Date.UTC(+y, +m - 1, +d));
-    } else {
-      date = new Date(value);
-    }
-    if (isNaN(date)) return null;
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC",
-    });
-  }
-  return serialToDate(value);
+  const [y, m, d] = value.split("-");
+  return d ? `${d}/${m}/${y}` : value;
 }

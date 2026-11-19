@@ -325,6 +325,12 @@
   min-width: 0;
 }
 
+.trophySlot {
+  display: flex;
+  flex-shrink: 0;
+  width: 1rem;
+}
+
 .trophy {
   flex-shrink: 0;
   width: 1rem;

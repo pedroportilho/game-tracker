@@ -1,17 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { logout } from "@/lib/authClient";
 
 // `short` é o rótulo curto usado nas abas do celular
 const NAV = [
   {
     href: "/dashboard",
-    label: "Stats",
-    short: "Stats",
+    label: "Estatísticas",
+    short: "Painel",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -34,8 +33,8 @@ const NAV = [
   },
   {
     href: "/games",
-    label: "Games",
-    short: "Games",
+    label: "Jogos",
+    short: "Jogos",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -57,8 +56,8 @@ const NAV = [
   },
   {
     href: "/backlog",
-    label: "Recovery Backlog",
-    short: "Backlog",
+    label: "Recuperação",
+    short: "Recuperar",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -82,8 +81,8 @@ const NAV = [
   },
   {
     href: "/series",
-    label: "Game Series",
-    short: "Series",
+    label: "Séries",
+    short: "Séries",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -174,15 +173,7 @@ function LogoutIcon() {
 // ─── Sidebar Desktop (colapsável, sem caixas) ────────────────────────────────
 function DesktopSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-    router.refresh();
-    router.push("/dashboard");
-  };
 
   return (
     <aside
@@ -197,15 +188,12 @@ function DesktopSidebar() {
       <div
         className={`mb-10 flex items-center ${collapsed ? "justify-center" : "px-3"}`}
       >
-        <div className={`relative ${collapsed ? "w-10 h-10" : "w-16 h-16"}`}>
-          <Image
-            src="/images/game-folder.png"
-            alt="Logo"
-            fill
-            priority
-            className="object-contain"
-          />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/game-folder.png"
+          alt="The Save File"
+          className={`object-contain ${collapsed ? "w-10 h-10" : "w-16 h-16"}`}
+        />
       </div>
 
       {/* Rótulo da seção (vira uma linha fina quando recolhida) */}
@@ -260,7 +248,7 @@ function DesktopSidebar() {
           className={`flex items-center rounded-md px-3 py-2 text-zinc-500 hover:text-zinc-200 transition-colors duration-150 ${
             collapsed ? "justify-center" : "gap-3"
           }`}
-          title={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
+          title={collapsed ? "Expandir menu" : "Recolher menu"}
         >
           <ChevronIcon collapsed={collapsed} />
           {!collapsed && (
@@ -269,22 +257,20 @@ function DesktopSidebar() {
             </span>
           )}
         </button>
-        {user ? (
-          <button
-            onClick={handleLogout}
-            className={`flex items-center rounded-md px-3 py-2 text-red-400/80 hover:text-red-300 transition-colors duration-150 ${
-              collapsed ? "justify-center" : "gap-3"
-            }`}
-            title={collapsed ? "Logout" : undefined}
-          >
-            <LogoutIcon />
-            {!collapsed && (
-              <span className="text-xs" style={{ whiteSpace: "nowrap" }}>
-                Logout
-              </span>
-            )}
-          </button>
-        ) : null}
+        <button
+          onClick={logout}
+          className={`flex items-center rounded-md px-3 py-2 text-red-400/80 hover:text-red-300 transition-colors duration-150 ${
+            collapsed ? "justify-center" : "gap-3"
+          }`}
+          title={collapsed ? "Sair" : undefined}
+        >
+          <LogoutIcon />
+          {!collapsed && (
+            <span className="text-xs" style={{ whiteSpace: "nowrap" }}>
+              Sair
+            </span>
+          )}
+        </button>
       </div>
     </aside>
   );
@@ -293,43 +279,30 @@ function DesktopSidebar() {
 // ─── Barra superior (celular): logo + título + abas de navegação ─────────────
 export function MobileHeader({ title }: { title?: string }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-    router.refresh();
-    router.push("/dashboard");
-  };
 
   return (
     <header className="md:hidden sticky top-0 z-30 bg-[#07080d]/85 backdrop-blur-xl">
-      {/* Linha 1: logo, título e logout */}
+      {/* Linha 1: logo, título e sair */}
       <div className="flex items-center gap-3 px-4 pt-3 pb-1">
-        <div className="relative w-8 h-8 shrink-0">
-          <Image
-            src="/images/game-folder.png"
-            alt="Logo"
-            fill
-            priority
-            className="object-contain"
-          />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/game-folder.png"
+          alt="The Save File"
+          className="w-8 h-8 shrink-0 object-contain"
+        />
         {title && (
           <span className="font-display font-extrabold tracking-tight text-zinc-100 text-lg">
             {title}
           </span>
         )}
-        {user && (
-          <button
-            onClick={handleLogout}
-            aria-label="Logout"
-            title="Logout"
-            className="ml-auto p-2 rounded-md text-red-400/80 hover:text-red-300 transition-colors"
-          >
-            <LogoutIcon />
-          </button>
-        )}
+        <button
+          onClick={logout}
+          aria-label="Sair"
+          title="Sair"
+          className="ml-auto p-2 rounded-md text-red-400/80 hover:text-red-300 transition-colors"
+        >
+          <LogoutIcon />
+        </button>
       </div>
 
       {/* Linha 2: abas com sublinhado no item ativo */}

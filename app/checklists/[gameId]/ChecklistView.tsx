@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import {
-  formatPct,
   gameCompletion,
   sectionCompletion,
   sectionTotals,
@@ -14,6 +13,9 @@ import {
   type ChecklistSection,
   type Progress,
 } from "@/lib/checklists";
+import { sessionExpired } from "@/lib/authClient";
+import { ProgressBar } from "@/components/ui";
+import { formatPercent } from "@/lib/constants";
 import styles from "../checklists.module.css";
 
 type Props = {
@@ -31,32 +33,60 @@ function nextValue(item: ChecklistItem, value: number): number {
 export function ChecklistView({ game, initialProgress }: Props) {
   const [progress, setProgress] = useState<Progress>(initialProgress);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
-  const inFlight = useRef(0);
 
-  // Atualiza na hora e confirma no servidor; se falhar, volta ao valor anterior.
-  async function setValue(item: ChecklistItem, value: number) {
-    const previous = valueOf(progress, item);
-    const next = Math.max(0, Math.min(value, item.max_value));
-    if (next === previous) return;
+  // Fila de gravação por item. Antes cada clique disparava um PATCH em
+  // paralelo; com cliques rápidos (ex.: "+" várias vezes) as requisições
+  // chegavam ao banco fora de ordem e um valor antigo sobrescrevia o novo.
+  // Agora há no máximo uma requisição por item em voo; cliques durante ela só
+  // atualizam o valor desejado, que é enviado assim que a anterior termina.
+  const confirmed = useRef<Progress>({ ...initialProgress }); // último valor salvo
+  const pending = useRef(new Map<string, number>()); // valor ainda não enviado
+  const sending = useRef(new Set<string>()); // itens com requisição em voo
 
-    setProgress((p) => ({ ...p, [item.id]: next }));
-    inFlight.current += 1;
+  async function flush(itemId: string) {
+    if (sending.current.has(itemId)) return; // o laço em andamento envia
+    sending.current.add(itemId);
     setStatus("saving");
 
+    let failed = false;
     try {
-      const res = await fetch("/api/checklists/progress", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: item.id, value: next }),
-      });
-      if (!res.ok) throw new Error("save failed");
-      inFlight.current -= 1;
-      if (inFlight.current === 0) setStatus("idle");
+      while (pending.current.has(itemId)) {
+        const value = pending.current.get(itemId)!;
+        pending.current.delete(itemId);
+
+        const res = await fetch("/api/checklists/progress", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ itemId, value }),
+          keepalive: true, // não perde o último clique se a aba fechar
+        });
+        if (res.status === 401) sessionExpired();
+        if (!res.ok) throw new Error(`save failed (${res.status})`);
+        confirmed.current[itemId] = value;
+      }
     } catch {
-      inFlight.current -= 1;
-      setProgress((p) => ({ ...p, [item.id]: previous }));
-      setStatus("error");
+      failed = true;
+      // Volta ao último valor que o servidor realmente gravou.
+      pending.current.delete(itemId);
+      setProgress((p) => ({ ...p, [itemId]: confirmed.current[itemId] ?? 0 }));
+    } finally {
+      sending.current.delete(itemId);
+      if (failed) setStatus("error");
+      else if (sending.current.size === 0) {
+        setStatus((s) => (s === "error" ? s : "idle"));
+      }
     }
+  }
+
+  // Atualiza na hora e agenda a gravação no servidor.
+  function setValue(item: ChecklistItem, value: number) {
+    const next = Math.max(0, Math.min(value, item.max_value));
+    if (next === valueOf(progress, item)) return;
+
+    setProgress((p) => ({ ...p, [item.id]: next }));
+    if (status === "error") setStatus("saving");
+    pending.current.set(item.id, next);
+    void flush(item.id);
   }
 
   const overall = gameCompletion(game, progress);
@@ -66,32 +96,23 @@ export function ChecklistView({ game, initialProgress }: Props) {
       <header className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Checklist</p>
-          {game.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={game.logo} alt={game.name} className={styles.heroLogo} />
-          ) : (
-            <h1 className={styles.title}>{game.name}</h1>
-          )}
+          {/* A lista de checklists já destaca os logos; aqui o nome completo */}
+          <h1 className={styles.title}>{game.name}</h1>
         </div>
 
         <div className={styles.heroStat}>
           <span
             className={`${styles.heroPct} ${overall >= 1 ? styles.heroPctDone : ""}`}
           >
-            {formatPct(overall)}%
+            {formatPercent(overall)}%
           </span>
-          <span className={styles.bar}>
-            <span
-              className={`${styles.barFill} ${overall >= 1 ? styles.barFillDone : ""}`}
-              style={{ width: `${overall * 100}%` }}
-            />
-          </span>
+          <ProgressBar value={overall} showLabel={false} />
           <p
             className={`${styles.statusLine} ${status === "error" ? styles.statusError : ""}`}
             role="status"
           >
-            {status === "saving" && "Saving…"}
-            {status === "error" && "Couldn’t save — change reverted."}
+            {status === "saving" && "Salvando…"}
+            {status === "error" && "Não foi possível salvar — a alteração foi desfeita."}
           </p>
         </div>
       </header>
@@ -133,7 +154,7 @@ function Section({
         <span
           className={`${styles.sectionPct} ${c >= 1 ? styles.sectionPctDone : ""}`}
         >
-          {formatPct(c)}%
+          {formatPercent(c)}%
         </span>
       </div>
 
@@ -228,7 +249,7 @@ function Tile({ item, progress, onSet }: ItemProps) {
             className={styles.step}
             onClick={() => onSet(item, value - 1)}
             disabled={value === 0}
-            aria-label={`Remove one ${item.label}`}
+            aria-label={`Remover um: ${item.label}`}
           >
             −
           </button>
@@ -238,7 +259,7 @@ function Tile({ item, progress, onSet }: ItemProps) {
             className={styles.step}
             onClick={() => onSet(item, value + 1)}
             disabled={done}
-            aria-label={`Add one ${item.label}`}
+            aria-label={`Adicionar um: ${item.label}`}
           >
             +
           </button>

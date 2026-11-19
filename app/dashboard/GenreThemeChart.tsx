@@ -37,7 +37,7 @@ export function GenreThemeChart({ genreStats, themeStats }: Props) {
   return (
     <section className={styles.block}>
       <div className={styles.blockHeader}>
-        <p className={styles.sectionTitle}>Breakdown</p>
+        <p className={styles.sectionTitle}>Distribuição</p>
 
         {/* Abas (radio buttons) */}
         <div className={styles.chartTabGroup}>
@@ -52,7 +52,7 @@ export function GenreThemeChart({ genreStats, themeStats }: Props) {
               onChange={() => setActive("genre")}
               className={styles.chartTabInput}
             />
-            Genre
+            Gênero
           </label>
           <label
             className={`${styles.chartTab} ${active === "theme" ? styles.chartTabActive : ""}`}
@@ -65,7 +65,7 @@ export function GenreThemeChart({ genreStats, themeStats }: Props) {
               onChange={() => setActive("theme")}
               className={styles.chartTabInput}
             />
-            Theme
+            Tema
           </label>
         </div>
       </div>
@@ -73,13 +73,13 @@ export function GenreThemeChart({ genreStats, themeStats }: Props) {
       {/* Legenda */}
       <div className={styles.barChartLegend}>
         <span className={styles.legendDotPurple} />
-        <span className={styles.legendLabel}>Games</span>
+        <span className={styles.legendLabel}>Jogos</span>
         <span className={styles.legendDotGreen} />
-        <span className={styles.legendLabel}>Platinum</span>
+        <span className={styles.legendLabel}>Platina</span>
       </div>
 
       {data.length === 0 ? (
-        <p className={styles.barChartEmpty}>No data yet</p>
+        <p className={styles.barChartEmpty}>Ainda não há dados</p>
       ) : (
         <ul className={styles.rankList}>
           {data.map((item) => {

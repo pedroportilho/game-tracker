@@ -1,16 +1,23 @@
 // Dashboard page dependencies and reusable UI components
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
-import { AuthPrompt } from "@/components/AuthPrompt";
 import { getGames } from "@/lib/supabase";
-import { getUserFromCookies } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { RecentCarousel } from "@/components/RecentCarousel";
 import { GenreThemeChart } from "./GenreThemeChart";
 import { StatusDonut } from "./StatusDonut";
+import {
+  ACCOUNT_STATUS_LABELS,
+  GENRE_LABELS,
+  THEME_LABELS,
+  labelFor,
+  formatPercent,
+} from "@/lib/constants";
 import styles from "./dashboard.module.css";
 
 // Force the page to be rendered dynamically for each request
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Estatísticas" };
 
 // Fetch and aggregate dashboard statistics from the user's game list
 async function getDashboardData(userId: string) {
@@ -63,7 +70,7 @@ async function getDashboardData(userId: string) {
 
   const genreStats = Object.entries(genreMap)
     .map(([genre, s]) => ({
-      genre,
+      genre: labelFor(GENRE_LABELS, genre),
       finished: s.finished,
       platinum: s.platinum,
       rate: s.finished ? s.platinum / s.finished : 0,
@@ -82,7 +89,7 @@ async function getDashboardData(userId: string) {
 
   const themeStats = Object.entries(themeMap)
     .map(([theme, s]) => ({
-      theme,
+      theme: labelFor(THEME_LABELS, theme),
       finished: s.finished,
       platinum: s.platinum,
       rate: s.finished ? s.platinum / s.finished : 0,
@@ -129,74 +136,63 @@ async function getDashboardData(userId: string) {
 }
 
 export default async function DashboardPage() {
-  const user = await getUserFromCookies();
-
-  // If the user is not authenticated, show a prompt instead of the dashboard
-  if (!user) {
-    return (
-      <div className={styles.authFallback}>
-        <Sidebar />
-        <div className={styles.authPromptWrapper}>
-          <AuthPrompt
-            title="Acesse sua conta"
-            description="Entre ou crie uma conta para ver seu dashboard pessoal, estatísticas e progresso."
-          />
-        </div>
-      </div>
-    );
-  }
+  const user = await requireUser();
 
   const d = await getDashboardData(user.id);
 
   // Valores derivados só para exibição
-  const completedPct = d.total ? Math.round((d.completed / d.total) * 100) : 0;
-  const platPct = Math.round(d.platRate * 100);
-  const avgPct = Math.round(d.avgCompletion * 100);
+  const completedPct = formatPercent(d.total ? d.completed / d.total : 0);
+  const platPct = formatPercent(d.platRate);
+  const avgPct = formatPercent(d.avgCompletion);
   const maxPlatform = d.platformStats[0]?.count || 1;
 
   const accountSegments = [
-    { label: "Preserved", value: d.preservedCount, tone: styles.tGreen },
-    { label: "Re-earned", value: d.reEarnedCount, tone: styles.tBlue },
-    { label: "Unverified", value: d.unverifiedCount, tone: styles.tLime },
-    { label: "Lost", value: d.lostCount, tone: styles.tRed },
-  ];
+    { key: "Preserved", value: d.preservedCount, tone: styles.tGreen },
+    { key: "Re-earned", value: d.reEarnedCount, tone: styles.tBlue },
+    { key: "Unverified", value: d.unverifiedCount, tone: styles.tLime },
+    { key: "Lost", value: d.lostCount, tone: styles.tRed },
+  ].map((s) => ({ ...s, label: labelFor(ACCOUNT_STATUS_LABELS, s.key) }));
 
   return (
     <div className={styles.dashboardPage}>
       <Sidebar />
 
       <div className={styles.dashboardMain}>
-        <MobileHeader title="Dashboard" />
+        <MobileHeader title="Estatísticas" />
 
         <main className={styles.dashboardContent}>
           {/* ── KPI strip: números grandes, sem caixas ── */}
           <section className={styles.kpiStrip}>
             <div className={styles.kpi}>
-              <span className={styles.kpiLabel}>Total games</span>
+              <span className={styles.kpiLabel}>Total de jogos</span>
               <span className={styles.kpiValue}>{d.total}</span>
-              <span className={styles.kpiSub}>in your library</span>
+              <span className={styles.kpiSub}>na sua coleção</span>
             </div>
 
             <div className={styles.kpi}>
-              <span className={styles.kpiLabel}>Completed</span>
+              <span className={styles.kpiLabel}>Concluídos</span>
               <span className={`${styles.kpiValue} ${styles.kpiValueMint}`}>
                 {completedPct}%
               </span>
-              <span className={styles.kpiSub}>{d.completed} games</span>
+              <span className={styles.kpiSub}>
+                {d.completed} {d.completed === 1 ? "jogo" : "jogos"}
+              </span>
             </div>
 
             <div className={styles.kpi}>
-              <span className={styles.kpiLabel}>Platinum rate</span>
+              <span className={styles.kpiLabel}>Taxa de platina</span>
               <span className={`${styles.kpiValue} ${styles.kpiValueBlue}`}>
                 {platPct}%
               </span>
-              <span className={styles.kpiSub}>{d.platCount} platinums</span>
+              <span className={styles.kpiSub}>
+                {d.platCount} {d.platCount === 1 ? "platina" : "platinas"}
+              </span>
             </div>
 
             <div className={styles.kpi}>
-              <span className={styles.kpiLabel}>Avg completion</span>
+              <span className={styles.kpiLabel}>Progresso médio</span>
               <span className={styles.kpiValue}>{avgPct}%</span>
-              <span className={styles.kpiSub}>across rated games</span>
+              <span className={styles.kpiSub}>dos jogos com progresso</span>
             </div>
           </section>
 
@@ -205,7 +201,7 @@ export default async function DashboardPage() {
             {/* Coluna principal */}
             <div className={styles.primary}>
               <section className={styles.recentSection}>
-                <p className={styles.sectionTitle}>Recent activity</p>
+                <p className={styles.sectionTitle}>Atividade recente</p>
                 <RecentCarousel games={d.recent} />
               </section>
 
@@ -223,12 +219,12 @@ export default async function DashboardPage() {
               </section>
 
               <section className={styles.block}>
-                <p className={styles.sectionTitle}>Account status</p>
+                <p className={styles.sectionTitle}>Status da conta</p>
                 <div className={styles.segBar}>
                   {accountSegments.map((s) =>
                     s.value > 0 ? (
                       <span
-                        key={s.label}
+                        key={s.key}
                         className={s.tone}
                         style={{ flexGrow: s.value }}
                       />
@@ -237,7 +233,7 @@ export default async function DashboardPage() {
                 </div>
                 <ul className={styles.segLegend}>
                   {accountSegments.map((s) => (
-                    <li key={s.label} className={styles.segItem}>
+                    <li key={s.key} className={styles.segItem}>
                       <span className={`${styles.segDot} ${s.tone}`} />
                       <span>{s.label}</span>
                       <span className={styles.segCount}>{s.value}</span>
@@ -247,7 +243,7 @@ export default async function DashboardPage() {
               </section>
 
               <section className={styles.block}>
-                <p className={styles.sectionTitle}>Top platforms</p>
+                <p className={styles.sectionTitle}>Principais plataformas</p>
                 <ul className={styles.rankList}>
                   {d.platformStats.map((platform) => {
                     const width = Math.round(

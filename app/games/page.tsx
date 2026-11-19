@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
 import {
   StatusBadge,
-  CompletionBar,
+  ProgressBar,
   Button,
   Modal,
   Select,
@@ -16,10 +16,13 @@ import {
   PLATFORMS,
   ACCOUNT_STATUSES,
   GAME_STATUSES,
+  ACCOUNT_STATUS_LABELS,
+  GAME_STATUS_LABELS,
+  labelFor,
   formatGameDate,
 } from "@/lib/constants";
 import { Pencil, Trash2, Plus, Search, Trophy } from "lucide-react";
-import { useAuth } from "@/components/AuthProvider";
+import { sessionExpired } from "@/lib/authClient";
 import styles from "./games.module.css";
 
 // Cor do ponto de cada status (mesmas cores da rosca do dashboard)
@@ -48,8 +51,6 @@ export default function GamesPage() {
   const [filterGameStatus, setFilterGameStatus] = useState("");
   const [sortBy, setSortBy] = useState("title");
 
-  const { requireAuth } = useAuth();
-
   useEffect(() => {
     fetchGames();
   }, []);
@@ -59,7 +60,11 @@ export default function GamesPage() {
     setError(null);
     try {
       const res = await fetch("/api/games");
-      if (!res.ok) throw new Error("Failed to load games");
+      if (res.status === 401) {
+        sessionExpired();
+        return;
+      }
+      if (!res.ok) throw new Error("Não foi possível carregar os jogos.");
       setGames(await res.json());
     } catch (e: any) {
       setError(e.message);
@@ -76,7 +81,12 @@ export default function GamesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to add game");
+      if (res.status === 401) {
+        setAddOpen(false);
+        sessionExpired();
+        return;
+      }
+      if (!res.ok) throw new Error("Não foi possível adicionar o jogo.");
       const newGame = await res.json();
       setGames((g) => [...g, newGame]);
       setAddOpen(false);
@@ -95,7 +105,12 @@ export default function GamesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to update game");
+      if (res.status === 401) {
+        setEditGame(null);
+        sessionExpired();
+        return;
+      }
+      if (!res.ok) throw new Error("Não foi possível salvar as alterações.");
       const updated = await res.json();
       setGames((g) => g.map((x) => (x.id === updated.id ? updated : x)));
       setEditGame(null);
@@ -112,7 +127,12 @@ export default function GamesPage() {
       const res = await fetch(`/api/games/${deleteGame.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete game");
+      if (res.status === 401) {
+        setDeleteGame(null);
+        sessionExpired();
+        return;
+      }
+      if (!res.ok) throw new Error("Não foi possível excluir o jogo.");
       setGames((g) => g.filter((x) => x.id !== deleteGame.id));
       setDeleteGame(null);
     } catch (e: any) {
@@ -137,10 +157,10 @@ export default function GamesPage() {
     if (filterGameStatus)
       list = list.filter((g) => g.game_status === filterGameStatus);
     list.sort((a, b) => {
-      if (sortBy === "title") return a.title.localeCompare(b.title);
+      if (sortBy === "title") return a.title.localeCompare(b.title, "pt-BR");
       if (sortBy === "completion")
         return (b.completion ?? -1) - (a.completion ?? -1);
-      if (sortBy === "platform") return a.platform.localeCompare(b.platform);
+      if (sortBy === "platform") return a.platform.localeCompare(b.platform, "pt-BR");
       if (sortBy === "date") {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       }
@@ -165,23 +185,23 @@ export default function GamesPage() {
       <Sidebar />
 
       <div className={styles.main}>
-        <MobileHeader title="Games" />
+        <MobileHeader title="Jogos" />
 
         <main className={styles.content}>
           {/* ── Header ── */}
           <header className={styles.header}>
             <div className={styles.headerText}>
-              <h1 className={styles.pageTitle}>Games</h1>
+              <h1 className={styles.pageTitle}>Jogos</h1>
               <p className={styles.subtitle}>
-                {filtered.length} of {games.length} games
+                {filtered.length} de {games.length} jogos
               </p>
             </div>
             <Button
               variant="primary"
-              onClick={() => requireAuth(() => setAddOpen(true))}
+              onClick={() => setAddOpen(true)}
             >
               <Plus className={styles.iconSm} />
-              <span className={styles.addLabel}>Add game</span>
+              <span className={styles.addLabel}>Adicionar jogo</span>
             </Button>
           </header>
 
@@ -192,19 +212,19 @@ export default function GamesPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search games…"
+                placeholder="Buscar jogos…"
                 className={styles.search}
               />
             </div>
 
             <div className={styles.controls}>
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Platform</span>
+                <span className={styles.fieldLabel}>Plataforma</span>
                 <Select
                   value={filterPlatform}
                   onChange={(e) => setFilterPlatform(e.target.value)}
                 >
-                  <option value="">All</option>
+                  <option value="">Todos</option>
                   {PLATFORMS.map((p) => (
                     <option key={p}>{p}</option>
                   ))}
@@ -212,53 +232,57 @@ export default function GamesPage() {
               </label>
 
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Account status</span>
+                <span className={styles.fieldLabel}>Status da conta</span>
                 <Select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                 >
-                  <option value="">All</option>
+                  <option value="">Todos</option>
                   {ACCOUNT_STATUSES.map((s) => (
-                    <option key={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {labelFor(ACCOUNT_STATUS_LABELS, s)}
+                    </option>
                   ))}
                 </Select>
               </label>
 
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Platinum</span>
+                <span className={styles.fieldLabel}>Platina</span>
                 <Select
                   value={filterPlatinum}
                   onChange={(e) => setFilterPlatinum(e.target.value)}
                 >
-                  <option value="">All</option>
-                  <option value="yes">Platinum</option>
-                  <option value="no">No Platinum</option>
+                  <option value="">Todos</option>
+                  <option value="yes">Platinados</option>
+                  <option value="no">Sem platina</option>
                 </Select>
               </label>
 
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Game status</span>
+                <span className={styles.fieldLabel}>Status do jogo</span>
                 <Select
                   value={filterGameStatus}
                   onChange={(e) => setFilterGameStatus(e.target.value)}
                 >
-                  <option value="">All</option>
+                  <option value="">Todos</option>
                   {GAME_STATUSES.map((s) => (
-                    <option key={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {labelFor(GAME_STATUS_LABELS, s)}
+                    </option>
                   ))}
                 </Select>
               </label>
 
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Order</span>
+                <span className={styles.fieldLabel}>Ordenar</span>
                 <Select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                 >
                   <option value="title">A → Z</option>
-                  <option value="date">Newest</option>
-                  <option value="completion">Completion</option>
-                  <option value="platform">Platform</option>
+                  <option value="date">Mais recentes</option>
+                  <option value="completion">Progresso</option>
+                  <option value="platform">Plataforma</option>
                 </Select>
               </label>
 
@@ -273,7 +297,7 @@ export default function GamesPage() {
                     setFilterGameStatus("");
                   }}
                 >
-                  Clear
+                  Limpar
                 </button>
               )}
             </div>
@@ -281,16 +305,16 @@ export default function GamesPage() {
 
           {/* ── Lista ── */}
           {loading ? (
-            <div className={styles.state}>Loading games…</div>
+            <div className={styles.state}>Carregando jogos…</div>
           ) : error ? (
             <div className={styles.state}>
               <p className={styles.stateError}>{error}</p>
               <Button variant="default" onClick={fetchGames}>
-                Retry
+                Tentar de novo
               </Button>
             </div>
           ) : filtered.length === 0 ? (
-            <p className={styles.empty}>No games found</p>
+            <p className={styles.empty}>Nenhum jogo encontrado</p>
           ) : (
             <ul className={styles.list}>
               {filtered.map((g) => {
@@ -323,15 +347,19 @@ export default function GamesPage() {
                       </div>
                     </div>
 
-                    {/* Status do jogo + completion */}
+                    {/* Status do jogo + progresso */}
                     <div className={styles.rowSide}>
                       <div className={styles.rowStatus}>
-                        {g.platinum && (
-                          <Trophy
-                            className={styles.trophy}
-                            aria-label="Platinum"
-                          />
-                        )}
+                        {/* Coluna fixa do troféu: fica vazia sem platina,
+                            para o status ficar alinhado em todas as linhas */}
+                        <span className={styles.trophySlot}>
+                          {g.platinum && (
+                            <Trophy
+                              className={styles.trophy}
+                              aria-label="Platinado"
+                            />
+                          )}
+                        </span>
                         {g.game_status && (
                           <span
                             className={`${styles.status} ${
@@ -339,13 +367,13 @@ export default function GamesPage() {
                             }`}
                           >
                             <span className={styles.statusDot} />
-                            {g.game_status}
+                            {labelFor(GAME_STATUS_LABELS, g.game_status)}
                           </span>
                         )}
                       </div>
 
                       <div className={styles.rowBar}>
-                        <CompletionBar value={g.completion} />
+                        <ProgressBar value={g.completion} />
                       </div>
                     </div>
 
@@ -354,7 +382,8 @@ export default function GamesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => requireAuth(() => setEditGame(g))}
+                        onClick={() => setEditGame(g)}
+                        aria-label={`Editar ${g.title}`}
                       >
                         <Pencil className={styles.iconXs} />
                       </Button>
@@ -362,7 +391,8 @@ export default function GamesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => requireAuth(() => setDeleteGame(g))}
+                        onClick={() => setDeleteGame(g)}
+                        aria-label={`Excluir ${g.title}`}
                       >
                         <Trash2
                           className={`${styles.iconXs} ${styles.iconDanger}`}
@@ -380,7 +410,7 @@ export default function GamesPage() {
       <Modal
         isOpen={addOpen}
         onClose={() => setAddOpen(false)}
-        title="Add game"
+        title="Adicionar jogo"
       >
         <GameForm
           onSubmit={handleAdd}
@@ -391,7 +421,7 @@ export default function GamesPage() {
       <Modal
         isOpen={!!editGame}
         onClose={() => setEditGame(null)}
-        title="Edit game"
+        title="Editar jogo"
       >
         {editGame && (
           <GameForm
@@ -405,14 +435,14 @@ export default function GamesPage() {
       <Modal
         isOpen={!!deleteGame}
         onClose={() => setDeleteGame(null)}
-        title="Delete game"
+        title="Excluir jogo"
       >
         {deleteGame && (
           <div className={styles.confirm}>
             <p className={styles.confirmText}>
-              Are you sure you want to delete{" "}
+              Tem certeza de que deseja excluir{" "}
               <span className={styles.confirmName}>{deleteGame.title}</span>?
-              This cannot be undone.
+              Essa ação não pode ser desfeita.
             </p>
             <div className={styles.confirmActions}>
               <Button
@@ -420,10 +450,10 @@ export default function GamesPage() {
                 onClick={() => setDeleteGame(null)}
                 disabled={saving}
               >
-                Cancel
+                Cancelar
               </Button>
               <Button variant="danger" onClick={handleDelete} disabled={saving}>
-                {saving ? "Deleting…" : "Delete"}
+                {saving ? "Excluindo…" : "Excluir"}
               </Button>
             </div>
           </div>

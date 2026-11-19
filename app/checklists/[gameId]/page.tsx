@@ -1,15 +1,28 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
-import { AuthPrompt } from "@/components/AuthPrompt";
-import { getUserFromCookies } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getChecklistGame, getChecklistProgress } from "@/lib/checklistsData";
 import styles from "../checklists.module.css";
 import { ChecklistView } from "./ChecklistView";
 
 export const dynamic = "force-dynamic";
+
+// Usado pelo título da aba e pela página: cache() faz uma busca só
+const loadGame = cache(getChecklistGame);
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ gameId: string }>;
+}) {
+  const { gameId } = await params;
+  const game = await loadGame(gameId);
+  return { title: game ? `Checklist: ${game.name}` : "Checklist" };
+}
 
 export default async function ChecklistGamePage({
   params,
@@ -18,22 +31,9 @@ export default async function ChecklistGamePage({
 }) {
   const { gameId } = await params;
 
-  const user = await getUserFromCookies();
-  if (!user) {
-    return (
-      <div className={styles.authFallback}>
-        <Sidebar />
-        <div className={styles.authWrap}>
-          <AuthPrompt
-            title="Entre para ver seu checklist"
-            description="Faça login ou crie uma conta para acompanhar o progresso 100% dos seus jogos."
-          />
-        </div>
-      </div>
-    );
-  }
+  const user = await requireUser();
 
-  const game = await getChecklistGame(gameId);
+  const game = await loadGame(gameId);
   if (!game) notFound();
 
   const progress = await getChecklistProgress(user.id, game.id);

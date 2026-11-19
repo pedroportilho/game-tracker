@@ -2,14 +2,24 @@
 
 import {
   ReactNode,
-  ButtonHTMLAttributes,
   InputHTMLAttributes,
   SelectHTMLAttributes,
 } from "react";
-import { STATUS_STYLES } from "@/lib/constants";
+import {
+  STATUS_STYLES,
+  ACCOUNT_STATUS_LABELS,
+  labelFor,
+  formatPercent,
+} from "@/lib/constants";
 
 type StatusBadgeProps = { status?: string };
-type CompletionBarProps = { value?: number | null; showLabel?: boolean };
+type ProgressBarProps = {
+  /** 0..1; null/undefined mostra "—" */
+  value?: number | null;
+  /** mostra a porcentagem à direita da barra */
+  showLabel?: boolean;
+  className?: string;
+};
 type ButtonVariant = "default" | "primary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "icon";
 type ButtonProps = {
@@ -20,6 +30,8 @@ type ButtonProps = {
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
   className?: string;
+  title?: string;
+  "aria-label"?: string;
 };
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
@@ -38,12 +50,6 @@ type ModalProps = {
   title: string;
   children: ReactNode;
 };
-type StatCardProps = {
-  label: string;
-  value: string | number | null;
-  sub?: string;
-  accent?: boolean;
-};
 
 // ── Badge ────────────────────────────────────────────────────────────────────
 export function StatusBadge({ status }: StatusBadgeProps) {
@@ -56,37 +62,54 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${s.bg} ${s.text} ${s.border}`}
     >
-      {status}
+      {labelFor(ACCOUNT_STATUS_LABELS, status)}
     </span>
   );
 }
 
-// ── CompletionBar ─────────────────────────────────────────────────────────────
-export function CompletionBar({ value, showLabel = true }: CompletionBarProps) {
-  if (value == null) return <span className="text-zinc-700 text-xs">—</span>;
-  const pct = Math.round(value * 100);
-  const color =
-    pct === 100
-      ? "bg-violet-500"
-      : pct >= 75
-        ? "bg-emerald-500"
-        : pct >= 50
-          ? "bg-amber-500"
-          : "bg-zinc-600";
+// ── ProgressBar ───────────────────────────────────────────────────────────────
+// A barra de progresso do site inteiro (jogos, recuperação, séries,
+// checklists): trilho fino, roxo durante o progresso, verde quando completa.
+// Só <span>s, para poder ficar dentro de <button> e <a>.
+export function ProgressBar({
+  value,
+  showLabel = true,
+  className = "",
+}: ProgressBarProps) {
+  if (value == null) {
+    return <span className="text-zinc-700 text-xs">—</span>;
+  }
+  const v = Math.min(1, Math.max(0, value));
+  const done = v >= 1;
+  const pct = formatPercent(v);
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1 bg-zinc-800 rounded-full min-w-[40px]">
-        <div
-          className={`h-full rounded-full transition-all ${color}`}
-          style={{ width: `${pct}%` }}
+    <span className={`flex items-center gap-3 min-w-0 ${className}`}>
+      <span
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(v * 100)}
+        aria-label={`${pct}%`}
+        className="block flex-1 min-w-[40px] h-1 rounded-full bg-white/[0.08] overflow-hidden"
+      >
+        <span
+          className={`block h-full rounded-full transition-[width] duration-300 ${
+            done ? "bg-emerald-400" : "bg-violet-500"
+          }`}
+          style={{ width: `${v * 100}%` }}
         />
-      </div>
+      </span>
       {showLabel && (
-        <span className="text-xs text-zinc-500 tabular-nums w-7 text-right">
+        <span
+          className={`w-12 shrink-0 text-right text-xs font-semibold tabular-nums ${
+            done ? "text-emerald-400" : "text-zinc-400"
+          }`}
+        >
           {pct}%
         </span>
       )}
-    </div>
+    </span>
   );
 }
 
@@ -99,6 +122,8 @@ export function Button({
   type = "button",
   disabled = false,
   className = "",
+  title,
+  "aria-label": ariaLabel,
 }: ButtonProps) {
   const base =
     "inline-flex items-center gap-2 font-medium rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer";
@@ -121,6 +146,8 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
       className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
     >
       {children}
@@ -191,6 +218,8 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
           </h2>
           <button
             onClick={onClose}
+            aria-label="Fechar"
+            title="Fechar"
             className="text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer p-1"
           >
             <svg
@@ -207,25 +236,6 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         </div>
         <div className="p-5">{children}</div>
       </div>
-    </div>
-  );
-}
-
-// ── StatCard ──────────────────────────────────────────────────────────────────
-export function StatCard({ label, value, sub, accent = false }: StatCardProps) {
-  return (
-    <div
-      className={`rounded-xl p-5 border bg-[#0f1117] border-white/6 ${accent ? "border-violet-500/20 bg-violet-950/20" : ""}`}
-    >
-      <p className="text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-2">
-        {label}
-      </p>
-      <p
-        className={`text-3xl font-display font-bold text-zinc-100 ${accent ? "text-violet-300" : "text-zinc-100"}`}
-      >
-        {value}
-      </p>
-      {sub && <p className="text-xs text-zinc-600 mt-1">{sub}</p>}
     </div>
   );
 }

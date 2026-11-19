@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { getUserByAccessToken, getAccessTokenFromRequest } from "@/lib/auth";
+import { supabaseAdmin, createAuthClient } from "@/lib/supabaseAdmin";
+import { getAccessTokenFromRequest } from "@/lib/auth";
+import {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+  accessCookieOptions,
+  refreshCookieOptions,
+} from "@/lib/authCookies";
 
 enum AuthMode {
   LOGIN = "login",
   REGISTER = "register",
-}
-
-export async function GET(req: Request) {
-  const token = getAccessTokenFromRequest(req);
-  const user = await getUserByAccessToken(token);
-  return NextResponse.json({
-    user: user ? { id: user.id, email: user.email } : null,
-  });
 }
 
 export async function POST(req: Request) {
@@ -48,7 +46,8 @@ export async function POST(req: Request) {
     }
 
     // login flow
-    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+    // Cliente descartável: o login não pode ficar guardado no supabaseAdmin
+    const { data, error } = await createAuthClient().auth.signInWithPassword({
       email,
       password,
     });
@@ -67,21 +66,17 @@ export async function POST(req: Request) {
 
     const result: any = { user: { id: data.user.id, email: data.user.email } };
     const nextResponse = NextResponse.json(result);
-    nextResponse.cookies.set("sb-access-token", data.session.access_token, {
-      httpOnly: true,
-      path: "/",
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: data.session.expires_in,
-    });
+    nextResponse.cookies.set(
+      ACCESS_COOKIE,
+      data.session.access_token,
+      accessCookieOptions(data.session.expires_in),
+    );
     if (data.session.refresh_token) {
-      nextResponse.cookies.set("sb-refresh-token", data.session.refresh_token, {
-        httpOnly: true,
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 30,
-      });
+      nextResponse.cookies.set(
+        REFRESH_COOKIE,
+        data.session.refresh_token,
+        refreshCookieOptions,
+      );
     }
 
     return nextResponse;
@@ -93,9 +88,17 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  // Revoga a sessão no Supabase também — sem isso o refresh token continuaria
+  // válido mesmo depois do logout.
+  const token = getAccessTokenFromRequest(req);
+  if (token) {
+    // "local": só este dispositivo (o padrão "global" deslogaria todos)
+    await supabaseAdmin.auth.admin.signOut(token, "local").catch(() => {});
+  }
+
   const response = new NextResponse(null, { status: 204 });
-  response.cookies.set("sb-access-token", "", { path: "/", maxAge: 0 });
-  response.cookies.set("sb-refresh-token", "", { path: "/", maxAge: 0 });
+  response.cookies.set(ACCESS_COOKIE, "", { path: "/", maxAge: 0 });
+  response.cookies.set(REFRESH_COOKIE, "", { path: "/", maxAge: 0 });
   return response;
 }

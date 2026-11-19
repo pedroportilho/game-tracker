@@ -1,33 +1,21 @@
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
-import { AuthPrompt } from "@/components/AuthPrompt";
-import { getUserFromCookies } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getChecklistCatalog, getChecklistProgress } from "@/lib/checklistsData";
 import {
   franchiseCompletion,
   gameCompletion,
-  formatPct,
 } from "@/lib/checklists";
+import { ProgressBar } from "@/components/ui";
+import { formatPercent } from "@/lib/constants";
 import styles from "./checklists.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Checklists" };
 
 export default async function ChecklistsPage() {
-  const user = await getUserFromCookies();
-  if (!user) {
-    return (
-      <div className={styles.authFallback}>
-        <Sidebar />
-        <div className={styles.authWrap}>
-          <AuthPrompt
-            title="Entre para ver seus checklists"
-            description="Faça login ou crie uma conta para acompanhar o progresso 100% dos seus jogos."
-          />
-        </div>
-      </div>
-    );
-  }
+  const user = await requireUser();
 
   const [catalog, progress] = await Promise.all([
     getChecklistCatalog(),
@@ -47,8 +35,8 @@ export default async function ChecklistsPage() {
           <header className={styles.header}>
             <h1 className={styles.pageTitle}>Checklists</h1>
             <p className={styles.subtitle}>
-              {totalGames} {totalGames === 1 ? "game" : "games"} in{" "}
-              {catalog.length} {catalog.length === 1 ? "franchise" : "franchises"}
+              {totalGames} {totalGames === 1 ? "jogo" : "jogos"} em{" "}
+              {catalog.length} {catalog.length === 1 ? "franquia" : "franquias"}
             </p>
           </header>
 
@@ -65,12 +53,12 @@ export default async function ChecklistsPage() {
                     <h2 className={styles.groupName}>{franchise.name}</h2>
                     <p className={styles.groupMeta}>
                       <span className={styles.groupPct}>
-                        {formatPct(
+                        {formatPercent(
                           franchiseCompletion(franchise.games, progress),
                         )}
                         %
                       </span>{" "}
-                      overall
+                      no total
                     </p>
                   </div>
 
@@ -81,31 +69,23 @@ export default async function ChecklistsPage() {
                         <li key={game.id}>
                           <Link
                             href={`/checklists/${game.id}`}
-                            className={styles.gameRow}
+                            className={styles.gameCard}
+                            title={game.name}
                           >
                             {game.logo ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={game.logo}
-                                alt=""
+                                alt={game.name}
                                 loading="lazy"
                                 className={styles.gameLogo}
                               />
                             ) : (
-                              <span className={styles.gameLogoEmpty} />
+                              <span className={styles.gameLogoEmpty}>
+                                {game.name}
+                              </span>
                             )}
-                            <span className={styles.gameName}>{game.name}</span>
-                            <span className={styles.gameProgress}>
-                              <span className={styles.bar}>
-                                <span
-                                  className={`${styles.barFill} ${c >= 1 ? styles.barFillDone : ""}`}
-                                  style={{ width: `${c * 100}%` }}
-                                />
-                              </span>
-                              <span className={styles.pct}>
-                                {formatPct(c)}%
-                              </span>
-                            </span>
+                            <ProgressBar value={c} />
                           </Link>
                         </li>
                       );

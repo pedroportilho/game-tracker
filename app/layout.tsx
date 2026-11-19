@@ -1,6 +1,5 @@
 ﻿import { Outfit, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/AuthProvider";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -15,8 +14,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
-  title: "The Save File",
-  description: "Personal game collection tracker",
+  // Cada página define só o próprio nome: "Jogos" → "Jogos · The Save File"
+  title: { default: "The Save File", template: "%s · The Save File" },
+  description: "Sua coleção de jogos, séries e checklists 100%",
 };
 
 export default function RootLayout({
@@ -25,9 +25,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${dmSans.variable}`}>
+    <html lang="pt-BR" className={`${outfit.variable} ${dmSans.variable}`}>
       <body className="bg-[#080a0f] text-zinc-100 font-body antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </body>
     </html>
   );

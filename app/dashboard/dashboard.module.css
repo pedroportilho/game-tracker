@@ -30,20 +30,6 @@
     var(--bg);
 }
 
-.authFallback {
-  display: flex;
-  min-height: 100vh;
-  background: #080a0f;
-}
-
-.authPromptWrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
 .dashboardMain {
   flex: 1;
   display: flex;
@@ -70,35 +56,6 @@
     gap: 2.75rem;
     padding: 2.5rem 2.5rem 4rem;
   }
-}
-
-/* ── Header ──────────────────────────────────────────────────────────── */
-.dashboardHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.dashboardTitle {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 2rem;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  margin: 0;
-  color: var(--ink);
-}
-
-@media (min-width: 768px) {
-  .dashboardTitle {
-    font-size: 2.75rem;
-  }
-}
-
-.dashboardSubtitle {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--dim);
 }
 
 /* ── KPI strip (números grandes, separados por linhas finas) ─────────── */
@@ -176,26 +133,6 @@
   min-height: 1.1em;
 }
 
-.kpiMeter {
-  height: 3px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  margin-top: 0.25rem;
-  max-width: 11rem;
-}
-
-.kpiMeterFill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--purple);
-  transition: width 0.6s ease;
-}
-
-.kpiMeterFillMint {
-  background: var(--mint);
-}
-
 /* ── Layout: coluna principal + rail ─────────────────────────────────── */
 .layout {
   display: grid;
@@ -257,12 +194,6 @@
 /* ── Recent activity (sem caixa) ─────────────────────────────────────── */
 .recentSection {
   min-width: 0;
-}
-
-.carouselFluid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.875rem;
 }
 
 /* ── Linhas de ranking (plataformas, gêneros, temas) ─────────────────── */

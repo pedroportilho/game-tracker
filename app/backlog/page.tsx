@@ -2,32 +2,19 @@ import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
-import { CompletionBar } from "@/components/ui";
-import { AuthPrompt } from "@/components/AuthPrompt";
+import { ProgressBar } from "@/components/ui";
 import { getBacklog, type Game } from "@/lib/supabase";
-import { getUserFromCookies } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import styles from "./backlog.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Recuperação" };
 
 export default async function BacklogPage() {
-  const user = await getUserFromCookies();
-  if (!user) {
-    return (
-      <div className={styles.authFallback}>
-        <Sidebar />
-        <div className={styles.authWrap}>
-          <AuthPrompt
-            title="Entre para ver seu backlog"
-            description="Faça login ou crie uma conta para acessar a lista de jogos perdidos e sua recuperação."
-          />
-        </div>
-      </div>
-    );
-  }
+  const user = await requireUser();
 
   const games = await getBacklog(user.id);
-  const backlog = games.sort((a, b) => a.title.localeCompare(b.title));
+  const backlog = games.sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
 
   const byPlatform: Record<string, Game[]> = {};
   for (const g of backlog) {
@@ -45,41 +32,42 @@ export default async function BacklogPage() {
       <Sidebar />
 
       <div className={styles.main}>
-        <MobileHeader title="Recovery Backlog" />
+        <MobileHeader title="Recuperação" />
 
         <main className={styles.content}>
           {/* ── Header ── */}
           <header className={styles.header}>
-            <h1 className={styles.pageTitle}>Recovery Backlog</h1>
+            <h1 className={styles.pageTitle}>Recuperação</h1>
             <p className={styles.subtitle}>
-              {backlog.length} games with lost accounts · {platinumCount}{" "}
-              platinums to re-earn
+              {backlog.length} {backlog.length === 1 ? "jogo" : "jogos"} em
+              contas perdidas · {platinumCount}{" "}
+              {platinumCount === 1 ? "platina" : "platinas"} para reconquistar
             </p>
           </header>
 
           {/* ── Faixa de números ── */}
           <section className={styles.kpiStrip}>
             <div className={styles.kpi}>
-              <span className={styles.kpiLabel}>To recover</span>
+              <span className={styles.kpiLabel}>A recuperar</span>
               <span className={`${styles.kpiValue} ${styles.kpiValueRed}`}>
                 {backlog.length}
               </span>
             </div>
             <div className={styles.kpi}>
-              <span className={styles.kpiLabel}>Plats lost</span>
+              <span className={styles.kpiLabel}>Platinas perdidas</span>
               <span className={`${styles.kpiValue} ${styles.kpiValueMint}`}>
                 {platinumCount}
               </span>
             </div>
             <div className={styles.kpi}>
-              <span className={styles.kpiLabel}>Platforms</span>
+              <span className={styles.kpiLabel}>Plataformas</span>
               <span className={styles.kpiValue}>{platforms.length}</span>
             </div>
           </section>
 
           {/* ── Por plataforma ── */}
           {platforms.length === 0 ? (
-            <p className={styles.empty}>No games with lost accounts</p>
+            <p className={styles.empty}>Nenhum jogo em contas perdidas</p>
           ) : (
             <div className={styles.groups}>
               {platforms.map(([platform, platformGames]) => (
@@ -87,8 +75,8 @@ export default async function BacklogPage() {
                   <div className={styles.groupHead}>
                     <h2 className={styles.platform}>{platform}</h2>
                     <p className={styles.platformCount}>
-                      {platformGames.length} game
-                      {platformGames.length !== 1 ? "s" : ""}
+                      {platformGames.length}{" "}
+                      {platformGames.length === 1 ? "jogo" : "jogos"}
                     </p>
                   </div>
 
@@ -102,12 +90,12 @@ export default async function BacklogPage() {
                         {g.platinum && (
                           <Trophy
                             className={styles.trophy}
-                            aria-label="Platinum"
+                            aria-label="Platinado"
                           />
                         )}
 
                         <div className={styles.bar}>
-                          <CompletionBar value={g.completion} />
+                          <ProgressBar value={g.completion} />
                         </div>
 
                         {g.notes && (

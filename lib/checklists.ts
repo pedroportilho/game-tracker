@@ -118,9 +118,3 @@ export function toMatrix(section: ChecklistSection) {
   }
   return { columns, rows };
 }
-
-/** 0..1 → "23.7" (uma casa; "100" e "0" sem decimal). */
-export function formatPct(fraction: number): string {
-  const v = Math.round(fraction * 1000) / 10;
-  return Number.isInteger(v) ? String(v) : v.toFixed(1);
-}

@@ -83,13 +83,3 @@ export async function getGame(id) {
   const arr = await igdbQuery("games", body);
   return arr[0] ?? null;
 }
-
-// Best-effort title match for migration. Returns IGDB id or null.
-export async function findBestMatch(title) {
-  const results = await searchGames(title, 5);
-  if (results.length === 0) return null;
-  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
-  const target = norm(title);
-  const exact = results.find((r) => norm(r.name) === target);
-  return (exact ?? results[0]).id;
-}

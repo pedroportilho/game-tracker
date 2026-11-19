@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import {
+  GAME_STATUS_LABELS,
+  formatPercent,
+  labelFor,
+} from "@/lib/constants";
 import styles from "./dashboard.module.css";
 
 type Buckets = {
@@ -48,7 +53,7 @@ export function StatusDonut({ buckets, total }: StatusDonutProps) {
       chartRef.current = new Chart(canvasRef.current, {
         type: "doughnut",
         data: {
-          labels: STATUS_CONFIG.map((s) => s.key),
+          labels: STATUS_CONFIG.map((s) => labelFor(GAME_STATUS_LABELS, s.key)),
           datasets: [
             {
               data: STATUS_CONFIG.map((s) => buckets[s.key as keyof Buckets]),
@@ -68,10 +73,9 @@ export function StatusDonut({ buckets, total }: StatusDonutProps) {
             tooltip: {
               callbacks: {
                 label: (ctx) => {
-                  const pct = total
-                    ? ((ctx.parsed / total) * 100).toFixed(1)
-                    : "0.0";
-                  return ` ${ctx.parsed} games (${pct}%)`;
+                  const pct = formatPercent(total ? ctx.parsed / total : 0);
+                  const word = ctx.parsed === 1 ? "jogo" : "jogos";
+                  return ` ${ctx.parsed} ${word} (${pct}%)`;
                 },
               },
               backgroundColor: "#1a1d2a",
@@ -106,22 +110,26 @@ export function StatusDonut({ buckets, total }: StatusDonutProps) {
         />
         <div className={styles.donutCenter}>
           <span className={styles.donutTotal}>{total}</span>
-          <span className={styles.donutTotalLabel}>games</span>
+          <span className={styles.donutTotalLabel}>
+            {total === 1 ? "jogo" : "jogos"}
+          </span>
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Legenda */}
       <ul className={styles.donutLegend}>
         {STATUS_CONFIG.map(({ key, color }) => {
           const count = buckets[key as keyof Buckets];
-          const pct = total ? ((count / total) * 100).toFixed(1) : "0.0";
+          const pct = formatPercent(total ? count / total : 0);
           return (
             <li key={key} className={styles.donutLegendItem}>
               <span
                 className={styles.donutLegendDot}
                 style={{ background: color }}
               />
-              <span className={styles.donutLegendLabel}>{key}</span>
+              <span className={styles.donutLegendLabel}>
+                {labelFor(GAME_STATUS_LABELS, key)}
+              </span>
               <span className={styles.donutLegendCount}>{count}</span>
               <span className={styles.donutLegendPct}>{pct}%</span>
             </li>

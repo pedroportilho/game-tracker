@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchGames, getGame, igdbImageUrl } from "@/lib/igdb";
+import { getUserFromRequest } from "@/lib/auth";
 
 function trim(g) {
   return {
@@ -16,9 +17,15 @@ function trim(g) {
 }
 
 export async function GET(request) {
+  // Só usuários logados: sem isso qualquer um usaria nossa cota da IGDB
+  const user = await getUserFromRequest(request);
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get("q") ?? "").trim();
+    if (!q || q.length > 100) return NextResponse.json([]);
 
     // If the query is purely digits, treat it as an IGDB ID lookup
     if (/^\d+$/.test(q)) {

@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
-import { Button, Modal } from "@/components/ui";
+import { Button, Modal, ProgressBar } from "@/components/ui";
+import { formatPercent } from "@/lib/constants";
 import { ChevronDown, Plus, GripVertical, Check } from "lucide-react";
 import {
   DndContext,
@@ -19,6 +20,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { sessionExpired } from "@/lib/authClient";
 import styles from "./series.module.css";
 
 function SortableEntry({ entry, onToggle, saving }) {
@@ -51,7 +53,7 @@ function SortableEntry({ entry, onToggle, saving }) {
         {...listeners}
         className={styles.handle}
         tabIndex={-1}
-        aria-label="Drag to reorder"
+        aria-label="Arraste para reordenar"
       >
         <GripVertical className={styles.iconXs} />
       </button>
@@ -59,7 +61,7 @@ function SortableEntry({ entry, onToggle, saving }) {
         onClick={() => onToggle(entry)}
         disabled={saving}
         aria-pressed={entry.completed}
-        aria-label={entry.completed ? "Mark as not completed" : "Mark as completed"}
+        aria-label={entry.completed ? "Desmarcar como concluído" : "Marcar como concluído"}
         className={`${styles.check} ${entry.completed ? styles.checkOn : ""}`}
       >
         {entry.completed && <Check className={styles.checkIcon} strokeWidth={3.5} />}
@@ -94,8 +96,8 @@ function SeriesItem({
 
   const total = entries.length;
   const done = entries.filter((e) => e.completed).length;
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-  const complete = total > 0 && pct === 100;
+  const fraction = total === 0 ? 0 : done / total;
+  const complete = total > 0 && done === total;
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -132,22 +134,15 @@ function SeriesItem({
         <span>
           <span className={styles.seriesName}>{series.name}</span>
           <span className={styles.seriesMeta}>
-            {done} / {total} completed
+            {done} / {total} {done === 1 ? "concluído" : "concluídos"}
           </span>
         </span>
 
         <span className={styles.progress}>
           <span className={`${styles.pct} ${complete ? styles.pctDone : ""}`}>
-            {pct}%
+            {formatPercent(fraction)}%
           </span>
-          <span className={styles.track}>
-            <span
-              className={`${styles.trackFill} ${
-                complete ? styles.trackFillDone : ""
-              }`}
-              style={{ width: `${pct}%`, display: "block" }}
-            />
-          </span>
+          <ProgressBar value={fraction} showLabel={false} className="w-full" />
         </span>
 
         <ChevronDown
@@ -185,7 +180,7 @@ function SeriesItem({
                 <input
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Game title…"
+                  placeholder="Nome do jogo…"
                   className={`${styles.control} ${styles.addInput}`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleAddEntry();
@@ -202,7 +197,7 @@ function SeriesItem({
                   onClick={handleAddEntry}
                   disabled={adding || !newTitle.trim()}
                 >
-                  {adding ? "…" : "Add"}
+                  {adding ? "…" : "Adicionar"}
                 </button>
                 <button
                   type="button"
@@ -212,7 +207,7 @@ function SeriesItem({
                     setNewTitle("");
                   }}
                 >
-                  Cancel
+                  Cancelar
                 </button>
               </>
             ) : (
@@ -221,7 +216,7 @@ function SeriesItem({
                 onClick={() => setAddOpen(true)}
                 className={styles.addLink}
               >
-                <Plus className={styles.iconXs} /> Add game
+                <Plus className={styles.iconXs} /> Adicionar jogo
               </button>
             )}
           </div>
@@ -238,7 +233,6 @@ export default function SeriesPage() {
   const [error, setError] = useState(null);
   const [addSeriesOpen, setAddSeriesOpen] = useState(false);
   const [newSeriesName, setNewSeriesName] = useState("");
-
   useEffect(() => {
     fetchSeries();
   }, []);
@@ -248,7 +242,11 @@ export default function SeriesPage() {
     setError(null);
     try {
       const res = await fetch("/api/series");
-      if (!res.ok) throw new Error("Failed to load series");
+      if (res.status === 401) {
+        sessionExpired();
+        return;
+      }
+      if (!res.ok) throw new Error("Não foi possível carregar as séries.");
       setSeriesList(await res.json());
     } catch (e) {
       setError(e.message);
@@ -268,11 +266,13 @@ export default function SeriesPage() {
     );
     setSaving(true);
     try {
-      await fetch("/api/series/entry", {
+      const res = await fetch("/api/series/entry", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: entry.id, completed: !entry.completed }),
       });
+      if (res.status === 401) sessionExpired();
+      if (!res.ok) throw new Error("Não foi possível salvar.");
     } catch {
       fetchSeries();
     } finally {
@@ -281,11 +281,12 @@ export default function SeriesPage() {
   }
 
   async function handleAddEntry(seriesId, title) {
-    await fetch("/api/series/entry", {
+    const res = await fetch("/api/series/entry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ seriesId, title }),
     });
+    if (res.status === 401) return sessionExpired();
     fetchSeries();
   }
 
@@ -302,12 +303,13 @@ export default function SeriesPage() {
         }),
       });
 
+      if (res.status === 401) sessionExpired();
       if (!res.ok) {
         const error = await res.text();
-        throw new Error(error || "Failed to reorder entries");
+        throw new Error(error || "Não foi possível salvar a nova ordem.");
       }
     } catch (error) {
-      console.error("Error saving order:", error);
+      console.error("Erro ao salvar a ordem:", error);
       fetchSeries();
     }
   }
@@ -316,11 +318,17 @@ export default function SeriesPage() {
     if (!newSeriesName.trim()) return;
     setSaving(true);
     try {
-      await fetch("/api/series", {
+      const res = await fetch("/api/series", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newSeriesName.trim() }),
       });
+      if (res.status === 401) {
+        setAddSeriesOpen(false);
+        sessionExpired();
+        return;
+      }
+      if (!res.ok) throw new Error("Não foi possível criar a série.");
       setNewSeriesName("");
       setAddSeriesOpen(false);
       fetchSeries();
@@ -336,30 +344,34 @@ export default function SeriesPage() {
     (acc, s) => acc + s.entries.filter((e) => e.completed).length,
     0,
   );
-  const overallPct = totalGames ? Math.round((totalDone / totalGames) * 100) : 0;
+  const overallPct = formatPercent(totalGames ? totalDone / totalGames : 0);
 
   return (
     <div className={styles.seriesPage}>
       <Sidebar />
 
       <div className={styles.main}>
-        <MobileHeader title="Series" />
+        <MobileHeader title="Séries" />
 
         <main className={styles.content}>
           {/* ── Header ── */}
           <header className={styles.header}>
             <div className={styles.headerText}>
-              <h1 className={styles.pageTitle}>Series</h1>
+              <h1 className={styles.pageTitle}>Séries</h1>
               {!loading && !error && (
                 <p className={styles.subtitle}>
-                  {totalDone} of {totalGames} games completed across{" "}
-                  {seriesList.length} series
+                  {totalDone} de {totalGames} jogos concluídos em{" "}
+                  {seriesList.length}{" "}
+                  {seriesList.length === 1 ? "série" : "séries"}
                 </p>
               )}
             </div>
-            <Button variant="primary" onClick={() => setAddSeriesOpen(true)}>
+            <Button
+              variant="primary"
+              onClick={() => setAddSeriesOpen(true)}
+            >
               <Plus className={styles.iconSm} />
-              <span className={styles.addLabel}>New series</span>
+              <span className={styles.addLabel}>Nova série</span>
             </Button>
           </header>
 
@@ -367,35 +379,35 @@ export default function SeriesPage() {
           {!loading && !error && (
             <section className={styles.kpiStrip}>
               <div className={styles.kpi}>
-                <span className={styles.kpiLabel}>Series</span>
+                <span className={styles.kpiLabel}>Séries</span>
                 <span className={styles.kpiValue}>{seriesList.length}</span>
               </div>
               <div className={styles.kpi}>
-                <span className={styles.kpiLabel}>Games</span>
+                <span className={styles.kpiLabel}>Jogos</span>
                 <span className={styles.kpiValue}>{totalGames}</span>
               </div>
               <div className={styles.kpi}>
-                <span className={styles.kpiLabel}>Completed</span>
+                <span className={styles.kpiLabel}>Concluídos</span>
                 <span className={`${styles.kpiValue} ${styles.kpiValueMint}`}>
                   {totalDone}
                 </span>
-                <span className={styles.kpiSub}>{overallPct}% overall</span>
+                <span className={styles.kpiSub}>{overallPct}% no total</span>
               </div>
             </section>
           )}
 
           {/* ── Lista ── */}
           {loading ? (
-            <div className={styles.state}>Loading series…</div>
+            <div className={styles.state}>Carregando séries…</div>
           ) : error ? (
             <div className={styles.state}>
               <p className={styles.stateError}>{error}</p>
               <Button variant="default" onClick={fetchSeries}>
-                Retry
+                Tentar de novo
               </Button>
             </div>
           ) : seriesList.length === 0 ? (
-            <p className={styles.empty}>No series yet</p>
+            <p className={styles.empty}>Nenhuma série ainda</p>
           ) : (
             <ul className={styles.seriesList}>
               {seriesList.map((series) => (
@@ -416,13 +428,13 @@ export default function SeriesPage() {
       <Modal
         isOpen={addSeriesOpen}
         onClose={() => setAddSeriesOpen(false)}
-        title="New series"
+        title="Nova série"
       >
         <div className={styles.modalBody}>
           <input
             value={newSeriesName}
             onChange={(e) => setNewSeriesName(e.target.value)}
-            placeholder="Series name…"
+            placeholder="Nome da série…"
             className={styles.control}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleAddSeries();
@@ -436,7 +448,7 @@ export default function SeriesPage() {
               onClick={() => setAddSeriesOpen(false)}
               disabled={saving}
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="button"
@@ -444,7 +456,7 @@ export default function SeriesPage() {
               onClick={handleAddSeries}
               disabled={saving || !newSeriesName.trim()}
             >
-              {saving ? "Creating…" : "Create"}
+              {saving ? "Criando…" : "Criar"}
             </button>
           </div>
         </div>

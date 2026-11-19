@@ -5,8 +5,7 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── Shell ───────────────────────────────────────────────────────────── */
-.backlogPage,
-.authFallback {
+.backlogPage {
   /* Tokens (iguais aos das outras páginas) */
   --bg: #07080d;
   --ink: #f4f4f8;
@@ -25,19 +24,6 @@
   background:
     radial-gradient(1000px 500px at 0% -10%, rgba(139, 92, 246, 0.14), transparent 60%),
     var(--bg);
-}
-
-.authFallback {
-  align-items: center;
-  justify-content: center;
-}
-
-.authWrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
 }
 
 .main {

@@ -2,14 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --accent: #7c5cfc;
-  --accent-hover: #6d4ef0;
-  --surface: #0f1117;
-  --surface-2: #161b26;
-  --border: rgba(255, 255, 255, 0.07);
-}
-
 * {
   scrollbar-width: thin;
   scrollbar-color: #2a2a3a transparent;

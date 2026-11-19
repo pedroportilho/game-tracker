@@ -23,7 +23,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+
+# cookies salvos pelo curl (podem conter tokens de sessão)
+cookiejar.txt
+*.cookies.txt
 
 # vercel
 .vercel

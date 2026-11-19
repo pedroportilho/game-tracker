@@ -1,12 +1,19 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/Sidebar";
-import { StatusBadge, CompletionBar } from "@/components/ui";
+import { StatusBadge, ProgressBar } from "@/components/ui";
 import { getGameById } from "@/lib/supabase";
 import { getGame, igdbImageUrl } from "@/lib/igdb";
-import { getUserFromCookies } from "@/lib/auth";
-import { formatGameDate } from "@/lib/constants";
+import { requireUser } from "@/lib/auth";
+import {
+  GENRE_LABELS,
+  THEME_LABELS,
+  formatGameDate,
+  formatUnixDate,
+  labelFor,
+} from "@/lib/constants";
 import { ArrowLeft, ExternalLink, Calendar, Trophy, Tag } from "lucide-react";
 import { GameEditButton } from "@/components/GameEditButton";
 import styles from "./game-detail.module.css";
@@ -23,27 +30,21 @@ async function fetchIgdb(igdbId) {
   }
 }
 
-export default async function GameDetailPage({ params }) {
-  const user = await getUserFromCookies();
-  if (!user) {
-    return (
-      <div className={styles.authFallback}>
-        <Sidebar />
-        <div className={styles.authBox}>
-          <h1 className={styles.authTitle}>Login required</h1>
-          <p className={styles.authText}>
-            Sign in from the Games page to view game details.
-          </p>
-          <Link href="/games" className={styles.igdbLink}>
-            Go to Games
-          </Link>
-        </div>
-      </div>
-    );
-  }
+// Usado pelo título da aba e pela página: cache() faz uma busca só
+const loadGame = cache(async (id: string) => {
+  const user = await requireUser();
+  return getGameById(id, user.id);
+});
 
+export async function generateMetadata({ params }) {
   const { id } = await params;
-  const game = await getGameById(id, user.id);
+  const game = await loadGame(id);
+  return { title: game?.title ?? "Jogo" };
+}
+
+export default async function GameDetailPage({ params }) {
+  const { id } = await params;
+  const game = await loadGame(id);
   if (!game) notFound();
 
   const igdb = await fetchIgdb(game.igdb_id);
@@ -54,9 +55,7 @@ export default async function GameDetailPage({ params }) {
     .filter(Boolean);
   const igdbThemes = (igdb?.themes ?? []).map((t) => t.name).filter(Boolean);
   const releaseDate = igdb?.first_release_date
-    ? new Date(igdb.first_release_date * 1000).toLocaleDateString("pt-BR", {
-        timeZone: "UTC",
-      })
+    ? formatUnixDate(igdb.first_release_date)
     : null;
   const igdbUrl = igdb?.url ?? null;
   const companies = igdb?.involved_companies ?? [];
@@ -86,7 +85,7 @@ export default async function GameDetailPage({ params }) {
           {/* ── Barra superior ── */}
           <div className={styles.topNav}>
             <Link href="/games" className={styles.back}>
-              <ArrowLeft className={styles.iconSm} /> Back to games
+              <ArrowLeft className={styles.iconSm} /> Voltar para jogos
             </Link>
             <GameEditButton game={game} />
           </div>
@@ -98,7 +97,7 @@ export default async function GameDetailPage({ params }) {
                 <img src={cover} alt={game.title} className={styles.cover} />
               ) : (
                 <div className={styles.coverEmpty}>
-                  {game.igdb_id ? "No cover available" : "Not linked to IGDB"}
+                  {game.igdb_id ? "Sem capa disponível" : "Não vinculado à IGDB"}
                 </div>
               )}
             </div>
@@ -111,7 +110,7 @@ export default async function GameDetailPage({ params }) {
                   {game.platinum && (
                     <Trophy
                       className={styles.titleTrophy}
-                      aria-label="Platinum"
+                      aria-label="Platinado"
                     />
                   )}
                 </h1>
@@ -121,7 +120,7 @@ export default async function GameDetailPage({ params }) {
                   <StatusBadge status={game.account_status} />
                   {game.platinum && (
                     <span className={`${styles.metaItem} ${styles.metaPlat}`}>
-                      <Trophy className={styles.iconXs} /> Platinum
+                      <Trophy className={styles.iconXs} /> Platinado
                     </span>
                   )}
                   {game.date && (
@@ -135,8 +134,8 @@ export default async function GameDetailPage({ params }) {
 
               {game.completion != null && (
                 <div className={styles.completion}>
-                  <p className={styles.label}>Completion</p>
-                  <CompletionBar value={game.completion} />
+                  <p className={styles.label}>Progresso</p>
+                  <ProgressBar value={game.completion} />
                 </div>
               )}
 
@@ -146,11 +145,11 @@ export default async function GameDetailPage({ params }) {
       <div className={styles.tagGroups}>
         {game.genres?.length > 0 && (
           <div>
-            <p className={styles.label}>Genres</p>
+            <p className={styles.label}>Gêneros</p>
             <div className={styles.tags}>
               {game.genres.map((g) => (
                 <span key={g} className={`${styles.tag} ${styles.tagGenre}`}>
-                  {g}
+                  {labelFor(GENRE_LABELS, g)}
                 </span>
               ))}
             </div>
@@ -159,12 +158,12 @@ export default async function GameDetailPage({ params }) {
 
         {igdbThemes.length > 0 && (
           <div>
-            <p className={styles.label}>Themes</p>
+            <p className={styles.label}>Temas</p>
             <div className={styles.tags}>
               {igdbThemes.map((t) => (
                 <span key={t} className={`${styles.tag} ${styles.tagTheme}`}>
                   <Tag className={styles.iconXs} />
-                  {t}
+                  {labelFor(THEME_LABELS, t)}
                 </span>
               ))}
             </div>
@@ -180,7 +179,7 @@ export default async function GameDetailPage({ params }) {
         rel="noreferrer"
         className={styles.igdbLink}
       >
-        <ExternalLink className={styles.iconSm} /> View on IGDB
+        <ExternalLink className={styles.iconSm} /> Ver na IGDB
       </Link>
     )}
   </div>
@@ -199,14 +198,14 @@ export default async function GameDetailPage({ params }) {
                 <div className={styles.primary}>
                   {game.notes && (
                     <section className={styles.block}>
-                      <p className={styles.sectionTitle}>Notes</p>
+                      <p className={styles.sectionTitle}>Anotações</p>
                       <p className={styles.notes}>{game.notes}</p>
                     </section>
                   )}
 
                   {summary && (
                     <section className={styles.block}>
-                      <p className={styles.sectionTitle}>Summary</p>
+                      <p className={styles.sectionTitle}>Resumo</p>
                       <p className={styles.summary}>{summary}</p>
                     </section>
                   )}
@@ -217,11 +216,11 @@ export default async function GameDetailPage({ params }) {
                 <aside className={styles.rail}>
                   {hasFacts && (
                     <section className={styles.block}>
-                      <p className={styles.sectionTitle}>Details</p>
+                      <p className={styles.sectionTitle}>Detalhes</p>
                       <dl className={styles.facts}>
                         {releaseDate && (
                           <div className={styles.fact}>
-                            <dt className={styles.factLabel}>Released</dt>
+                            <dt className={styles.factLabel}>Lançamento</dt>
                             <dd className={styles.factValue}>{releaseDate}</dd>
                           </div>
                         )}
@@ -229,7 +228,7 @@ export default async function GameDetailPage({ params }) {
                         {developers.length > 0 && (
                           <div className={styles.fact}>
                             <dt className={styles.factLabel}>
-                              Developer{developers.length > 1 ? "s" : ""}
+                              {developers.length > 1 ? "Desenvolvedoras" : "Desenvolvedora"}
                             </dt>
                             <dd className={styles.factValue}>
                               {developers.map((d) => (
@@ -242,7 +241,7 @@ export default async function GameDetailPage({ params }) {
                         {publishers.length > 0 && (
                           <div className={styles.fact}>
                             <dt className={styles.factLabel}>
-                              Publisher{publishers.length > 1 ? "s" : ""}
+                              {publishers.length > 1 ? "Distribuidoras" : "Distribuidora"}
                             </dt>
                             <dd className={styles.factValue}>
                               {publishers.map((p) => (
@@ -257,7 +256,7 @@ export default async function GameDetailPage({ params }) {
 
                   {igdbPlatforms.length > 0 && (
                     <section className={styles.block}>
-                      <p className={styles.sectionTitle}>Available on</p>
+                      <p className={styles.sectionTitle}>Disponível em</p>
                       <ul className={styles.platformList}>
                         {igdbPlatforms.map((platform) => (
                           <li key={platform} className={styles.platformItem}>

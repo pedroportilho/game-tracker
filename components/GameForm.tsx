@@ -7,6 +7,9 @@ import {
   ACCOUNT_STATUSES,
   GENRES,
   GAME_STATUSES,
+  ACCOUNT_STATUS_LABELS,
+  GAME_STATUS_LABELS,
+  labelFor,
 } from "@/lib/constants";
 import { Search, X, Trophy } from "lucide-react";
 import styles from "./GameForm.module.css";
@@ -72,7 +75,7 @@ const EMPTY: GameFormState = {
   themes: [],
 };
 
-// Converte "May 2024" → "2024-05-01" para popular o <input type="date">
+// Data do banco → valor do <input type="date"> (que sempre usa AAAA-MM-DD)
 function displayDateToInputValue(dateStr?: string | null) {
   if (!dateStr) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
@@ -87,16 +90,16 @@ function displayDateToInputValue(dateStr?: string | null) {
 
 function validate(form: GameFormState) {
   const e: GameFormErrors = {};
-  if (!form.title.trim()) e.title = "Required";
-  if (!form.platform) e.platform = "Required";
-  if (!form.account_status) e.account_status = "Required";
+  if (!form.title.trim()) e.title = "Obrigatório";
+  if (!form.platform) e.platform = "Obrigatório";
+  if (!form.account_status) e.account_status = "Obrigatório";
   if (
     form.completion !== "" &&
     (isNaN(Number(form.completion)) ||
       Number(form.completion) < 0 ||
       Number(form.completion) > 100)
   )
-    e.completion = "0–100";
+    e.completion = "Entre 0 e 100";
   return e;
 }
 
@@ -182,9 +185,9 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
   return (
     <div className={styles.lookup} ref={containerRef}>
       <p className={styles.lookupLabel}>
-        IGDB lookup
+        Buscar na IGDB
         {currentIgdbId && (
-          <span className={styles.linked}>linked #{currentIgdbId}</span>
+          <span className={styles.linked}>vinculado #{currentIgdbId}</span>
         )}
       </p>
       <div className={styles.lookupWrap}>
@@ -196,14 +199,15 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          placeholder="Search IGDB by name or paste an ID…"
+          placeholder="Busque pelo nome ou cole um ID da IGDB…"
           className={`${styles.control} ${styles.lookupInput}`}
         />
         {currentIgdbId && (
           <button
             type="button"
             onClick={onClear}
-            title="Unlink"
+            title="Desvincular"
+            aria-label="Desvincular da IGDB"
             className={styles.unlink}
           >
             <X className={styles.unlinkIcon} />
@@ -220,10 +224,10 @@ function IgdbSearch({ onPick, currentIgdbId, onClear }: IgdbSearchProps) {
           if (!shouldShow) return null;
           return (
             <div className={styles.dropdown}>
-              {loading && <div className={styles.dropdownMsg}>Searching…</div>}
+              {loading && <div className={styles.dropdownMsg}>Buscando…</div>}
               {!loading && results.length === 0 && (q.length >= 2 || isId) && (
                 <div className={styles.dropdownMsg}>
-                  {isId ? `No game with IGDB ID ${q}` : "No results"}
+                  {isId ? `Nenhum jogo com o ID ${q} na IGDB` : "Nenhum resultado"}
                 </div>
               )}
               {results.map((r) => (
@@ -294,14 +298,6 @@ export function GameForm({
     val: GameFormState[keyof GameFormState],
   ) => setForm((f) => ({ ...f, [key]: val }));
 
-  const toggleGenre = (g) =>
-    setForm((f) => ({
-      ...f,
-      genres: f.genres.includes(g)
-        ? f.genres.filter((x) => x !== g)
-        : [...f.genres, g],
-    }));
-
   async function handlePickIgdb(result) {
     try {
       const res = await fetch(`/api/igdb/games/${result.id}`);
@@ -357,7 +353,7 @@ export function GameForm({
         onClear={() => set("igdb_id", null)}
       />
 
-      <Field label="Title" error={errors.title}>
+      <Field label="Título" error={errors.title}>
         <input
           className={`${styles.control} ${styles.controlTitle}`}
           value={form.title}
@@ -366,20 +362,20 @@ export function GameForm({
       </Field>
 
       <div className={styles.grid}>
-        <Field label="Platform" error={errors.platform}>
+        <Field label="Plataforma" error={errors.platform}>
           <select
             className={styles.control}
             value={form.platform}
             onChange={(e) => set("platform", e.target.value)}
           >
-            <option value="">Select…</option>
+            <option value="">Selecione…</option>
             {PLATFORMS.map((p) => (
               <option key={p}>{p}</option>
             ))}
           </select>
         </Field>
 
-        <Field label="Date">
+        <Field label="Data de conclusão">
           <input
             className={styles.control}
             type="date"
@@ -388,31 +384,35 @@ export function GameForm({
           />
         </Field>
 
-        <Field label="Account status" error={errors.account_status}>
+        <Field label="Status da conta" error={errors.account_status}>
           <select
             className={styles.control}
             value={form.account_status}
             onChange={(e) => set("account_status", e.target.value)}
           >
             {ACCOUNT_STATUSES.map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {labelFor(ACCOUNT_STATUS_LABELS, s)}
+              </option>
             ))}
           </select>
         </Field>
 
-        <Field label="Game status" error={errors.game_status}>
+        <Field label="Status do jogo" error={errors.game_status}>
           <select
             className={styles.control}
             value={form.game_status}
             onChange={(e) => set("game_status", e.target.value)}
           >
             {GAME_STATUSES.map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {labelFor(GAME_STATUS_LABELS, s)}
+              </option>
             ))}
           </select>
         </Field>
 
-        <Field label="Completion %" error={errors.completion}>
+        <Field label="Progresso %" error={errors.completion}>
           <input
             className={styles.control}
             type="number"
@@ -432,11 +432,11 @@ export function GameForm({
             onChange={(e) => set("platinum", e.target.checked)}
           />
           <Trophy className={styles.platinumIcon} />
-          <span className={styles.platinumText}>Platinum / 100%</span>
+          <span className={styles.platinumText}>Platinado / 100%</span>
         </label>
       </div>
 
-      <Field label="Optional Notes">
+      <Field label="Anotações (opcional)">
         <textarea
           className={`${styles.control} ${styles.textarea}`}
           value={form.notes}
@@ -452,10 +452,10 @@ export function GameForm({
           onClick={onCancel}
           disabled={loading}
         >
-          Cancel
+          Cancelar
         </button>
         <button type="submit" className={styles.btnPrimary} disabled={loading}>
-          {loading ? "Saving…" : initialData ? "Save changes" : "Add game"}
+          {loading ? "Salvando…" : initialData ? "Salvar alterações" : "Adicionar jogo"}
         </button>
       </div>
     </form>
