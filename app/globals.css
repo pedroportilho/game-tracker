@@ -51,7 +51,14 @@
 }
 
 /* ── Reset (o mesmo comportamento do preflight do Tailwind, que o site
-   usava antes) ───────────────────────────────────────────────────────── */
+   usava antes) ─────────────────────────────────────────────────────────
+   Regra: o reset NUNCA pode pesar mais que uma classe. No build de produção
+   o Next reordena os arquivos de CSS, e um seletor de atributo/pseudo-classe
+   (ex.: [type="button"]) tem o mesmo peso de .classe — aí vence quem vier
+   depois, e o reset apagava estilos dos componentes (os círculos de nível
+   dos checklists sumiam só no site publicado). Por isso esses seletores
+   ficam dentro de :where(), que tem peso zero. tests/unit/globals-css.test.ts
+   confere isso. */
 *,
 ::before,
 ::after {
@@ -107,17 +114,17 @@ button, input, optgroup, select, textarea {
   padding: 0;
 }
 
-button, [type="button"], [type="reset"], [type="submit"] {
+:where(button, [type="button"], [type="reset"], [type="submit"]) {
   -webkit-appearance: button;
   background-color: transparent;
   background-image: none;
 }
 
-button, [role="button"] {
+:where(button, [role="button"]) {
   cursor: pointer;
 }
 
-:disabled {
+:where(:disabled) {
   cursor: default;
 }
 
@@ -148,8 +155,9 @@ img, video {
   height: auto;
 }
 
+/* O atributo hidden sempre esconde, mesmo com display numa classe */
 [hidden] {
-  display: none;
+  display: none !important;
 }
 
 /* ── Detalhes ────────────────────────────────────────────────────────── */
