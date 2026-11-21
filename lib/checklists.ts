@@ -70,13 +70,7 @@ export function sectionCompletion(section: ChecklistSection, progress: Progress)
 
 /** Média das seções ponderada por `weight` (na planilha, todas valem igual). 0..1 */
 export function gameCompletion(game: ChecklistGame, progress: Progress): number {
-  let sum = 0;
-  let weights = 0;
-  for (const s of game.sections) {
-    sum += s.weight * sectionCompletion(s, progress);
-    weights += s.weight;
-  }
-  return weights === 0 ? 0 : sum / weights;
+  return sectionsCompletion(game.sections, progress);
 }
 
 /** Média dos jogos: o "Overall Total" da planilha. 0..1 */
@@ -117,4 +111,102 @@ export function toMatrix(section: ChecklistSection) {
     row.cells[columns.findIndex((c) => c.label === item.label)] = item;
   }
   return { columns, rows };
+}
+
+// ─── Seções agrupadas: abas e mapas sobrepostos ──────────────────────────────
+// O nome da seção diz como ela se junta às vizinhas (só visual: cada parte
+// continua sendo uma seção, com seu peso no cálculo do jogo):
+//
+//   "Grupo › Parte"  → ABAS: uma seção com uma aba por parte
+//                      ex.: "Figurines › Hall A: Forest Haven"
+//   "Grupo + Parte"  → SOBREPOSIÇÃO: seções 'matrix' com as mesmas linhas e
+//                      colunas viram uma grade só, com um check por parte em
+//                      cada célula — ex.: "Mapping + Charted Map" e
+//                      "Mapping + Salvaged Treasure" (mapeado / tesouro)
+//
+// Só seções seguidas do mesmo grupo se juntam. O "—" não agrupa nada.
+
+export const GROUP_SEPARATORS = { tabs: " › ", overlay: " + " } as const;
+
+type GroupKind = keyof typeof GROUP_SEPARATORS;
+
+export type SectionPart = { label: string; section: ChecklistSection };
+
+type GroupBlock<K extends GroupKind> = {
+  kind: K;
+  /** id estável do grupo (o da primeira parte) */
+  id: string;
+  title: string;
+  parts: SectionPart[];
+};
+
+export type SectionBlock =
+  | { kind: "single"; section: ChecklistSection }
+  | GroupBlock<"tabs">
+  | GroupBlock<"overlay">;
+
+function splitGroupName(name: string): { kind: GroupKind; group: string; label: string } | null {
+  for (const kind of Object.keys(GROUP_SEPARATORS) as GroupKind[]) {
+    const sep = GROUP_SEPARATORS[kind];
+    const i = name.indexOf(sep);
+    if (i > 0) return { kind, group: name.slice(0, i), label: name.slice(i + sep.length) };
+  }
+  return null;
+}
+
+/** Junta as seções seguidas do mesmo grupo em blocos (abas ou sobreposição). */
+export function groupSections(sections: ChecklistSection[]): SectionBlock[] {
+  const blocks: SectionBlock[] = [];
+  for (const section of sections) {
+    const parsed = splitGroupName(section.name);
+    // Sobreposição só faz sentido entre grades
+    const g = parsed?.kind === "overlay" && section.layout !== "matrix" ? null : parsed;
+    const last = blocks[blocks.length - 1];
+    if (g && last && last.kind === g.kind && last.title === g.group) {
+      last.parts.push({ label: g.label, section });
+    } else if (g) {
+      blocks.push({ kind: g.kind, id: section.id, title: g.group, parts: [{ label: g.label, section }] } as GroupBlock<GroupKind> as SectionBlock);
+    } else {
+      blocks.push({ kind: "single", section });
+    }
+  }
+  return blocks;
+}
+
+/**
+ * Grade única de várias seções 'matrix' sobrepostas: linhas e colunas da
+ * primeira; cada célula tem um item (ou null) por parte, na ordem das partes.
+ */
+export function toOverlayMatrix(parts: SectionPart[]) {
+  const { columns, rows } = toMatrix(parts[0].section);
+  const layers = parts.map((p) => {
+    const m = toMatrix(p.section);
+    const byKey = new Map<string, ChecklistItem>();
+    m.rows.forEach((row) =>
+      row.cells.forEach((item, i) => {
+        if (item) byKey.set(`${row.group}\u0000${m.columns[i].label}`, item);
+      }),
+    );
+    return byKey;
+  });
+  return {
+    columns,
+    rows: rows.map((row) => ({
+      group: row.group,
+      cells: columns.map((col) =>
+        layers.map((layer) => layer.get(`${row.group}\u0000${col.label}`) ?? null),
+      ),
+    })),
+  };
+}
+
+/** Conclusão de várias seções juntas, ponderada como no jogo. 0..1 */
+export function sectionsCompletion(sections: ChecklistSection[], progress: Progress): number {
+  let sum = 0;
+  let weights = 0;
+  for (const s of sections) {
+    sum += s.weight * sectionCompletion(s, progress);
+    weights += s.weight;
+  }
+  return weights === 0 ? 0 : sum / weights;
 }

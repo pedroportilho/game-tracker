@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   franchiseCompletion,
   gameCompletion,
+  groupSections,
   sectionCompletion,
+  sectionsCompletion,
   sectionTotals,
   stateLabel,
   toMatrix,
+  toOverlayMatrix,
   valueOf,
   type ChecklistGame,
   type ChecklistItem,
@@ -111,5 +114,91 @@ describe("toMatrix", () => {
   it("células que não existem viram null", () => {
     expect(rows.map((r) => r.group)).toEqual(["Masmorra 1", "Masmorra 2"]);
     expect(rows[1].cells.map((c) => c?.id ?? null)).toEqual(["m2-map", null, "m2-key"]);
+  });
+});
+
+describe("groupSections (seções com abas)", () => {
+  const named = (id: string, name: string, weight = 1) => ({ ...section(id, [item(id + "-i")], weight), name });
+  const sections = [
+    named("inv", "Inventory"),
+    named("map", "Mapping — Charted Map"), // "—" não vira aba
+    named("fa", "Figurines › Hall A: Forest Haven"),
+    named("fb", "Figurines › Hall B: Dragon Roost"),
+    named("other", "Other"),
+    named("fc", "Figurines › Hall C: Enemies"), // separado: começa outro grupo
+  ];
+  const blocks = groupSections(sections);
+
+  it("junta seções seguidas do mesmo grupo numa só, com abas", () => {
+    expect(blocks.map((b) => (b.kind === "single" ? b.section.id : `${b.kind}:${b.title}`))).toEqual([
+      "inv",
+      "map",
+      "tabs:Figurines",
+      "other",
+      "tabs:Figurines",
+    ]);
+  });
+
+  it("o rótulo da aba é o que vem depois do ›", () => {
+    const tabs = blocks[2];
+    expect(tabs.kind === "tabs" && tabs.parts.map((t) => t.label)).toEqual([
+      "Hall A: Forest Haven",
+      "Hall B: Dragon Roost",
+    ]);
+  });
+
+  it("sem nenhum ›, nada muda", () => {
+    expect(groupSections(sections.slice(0, 2)).every((b) => b.kind === "single")).toBe(true);
+  });
+
+  it("a conclusão do grupo é ponderada pelo peso de cada aba", () => {
+    const a = named("a", "G › A", 3); // 100%
+    const b = named("b", "G › B", 1); // 0%
+    expect(sectionsCompletion([a, b], { "a-i": 1 })).toBe(0.75);
+  });
+});
+
+describe("grades sobrepostas (\"Grupo + Parte\")", () => {
+  // Mapa 2×2 em duas camadas; a camada "tesouro" não tem a célula B2
+  const cell = (prefix: string, row: string, col: string) =>
+    item(`${prefix}.${row}${col}`, { group_label: row, label: col, sort: Number(row) * 10 + col.charCodeAt(0) });
+  const matrix = (id: string, name: string, items: ChecklistItem[]) => ({
+    ...section(id, items),
+    name,
+    layout: "matrix" as const,
+  });
+  const charted = matrix("charted", "Mapping + Charted Map", [
+    cell("c", "1", "A"), cell("c", "1", "B"), cell("c", "2", "A"), cell("c", "2", "B"),
+  ]);
+  const salvaged = matrix("salvaged", "Mapping + Salvaged Treasure", [
+    cell("s", "1", "A"), cell("s", "1", "B"), cell("s", "2", "A"),
+  ]);
+
+  it("duas grades seguidas do mesmo grupo viram um bloco de sobreposição", () => {
+    const blocks = groupSections([charted, salvaged]);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({ kind: "overlay", title: "Mapping" });
+    expect(blocks[0].kind !== "single" && blocks[0].parts.map((p) => p.label)).toEqual([
+      "Charted Map",
+      "Salvaged Treasure",
+    ]);
+  });
+
+  it("só grades se sobrepõem; outro layout fica como seção comum", () => {
+    const lista = { ...section("l", [item("x")]), name: "Mapping + Lista" };
+    expect(groupSections([lista])[0].kind).toBe("single");
+  });
+
+  it("cada célula traz um item por camada, alinhado por linha e coluna", () => {
+    const { columns, rows } = toOverlayMatrix([
+      { label: "Charted Map", section: charted },
+      { label: "Salvaged Treasure", section: salvaged },
+    ]);
+    expect(columns.map((c) => c.label)).toEqual(["A", "B"]);
+    const ids = rows.map((r) => r.cells.map((layers) => layers.map((i) => i?.id ?? null)));
+    expect(ids).toEqual([
+      [["c.1A", "s.1A"], ["c.1B", "s.1B"]],
+      [["c.2A", "s.2A"], ["c.2B", null]],
+    ]);
   });
 });

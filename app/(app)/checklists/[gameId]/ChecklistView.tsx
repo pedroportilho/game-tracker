@@ -1,17 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import {
   gameCompletion,
+  groupSections,
   sectionCompletion,
+  sectionsCompletion,
   sectionTotals,
   stateLabel,
   toMatrix,
+  toOverlayMatrix,
   valueOf,
   type ChecklistGame,
   type ChecklistItem,
   type ChecklistSection,
   type Progress,
+  type SectionBlock,
 } from "@/lib/checklists";
 import { api, errorText } from "@/lib/api";
 import { ProgressBar } from "@/components/ui";
@@ -102,18 +106,36 @@ export function ChecklistView({ game, initialProgress }: Props) {
       </header>
 
       <div className={styles.sections}>
-        {game.sections.map((section) => (
-          <Section
-            key={section.id}
-            section={section}
-            progress={progress}
-            onSet={setValue}
-          />
-        ))}
+        {groupSections(game.sections).map((block) =>
+          block.kind === "tabs" ? (
+            <TabbedSection
+              key={block.id}
+              block={block}
+              progress={progress}
+              onSet={setValue}
+            />
+          ) : block.kind === "overlay" ? (
+            <OverlaySection
+              key={block.id}
+              block={block}
+              progress={progress}
+              onSet={setValue}
+            />
+          ) : (
+            <Section
+              key={block.section.id}
+              section={block.section}
+              progress={progress}
+              onSet={setValue}
+            />
+          ),
+        )}
       </div>
     </>
   );
 }
+
+type OnSet = (item: ChecklistItem, value: number) => void;
 
 // ─── Seção ───────────────────────────────────────────────────────────────────
 function Section({
@@ -123,52 +145,278 @@ function Section({
 }: {
   section: ChecklistSection;
   progress: Progress;
-  onSet: (item: ChecklistItem, value: number) => void;
+  onSet: OnSet;
 }) {
   const { got, total } = sectionTotals(section, progress);
-  const c = sectionCompletion(section, progress);
 
   return (
     <section className={styles.section}>
-      <div className={styles.sectionHead}>
-        <h2 className={styles.sectionName}>{section.name}</h2>
-        <span className={styles.sectionCount}>
-          {got}/{total}
-        </span>
-        <span
-          className={`${styles.sectionPct} ${c >= 1 ? styles.sectionPctDone : ""}`}
-        >
-          {formatPercent(c)}%
-        </span>
+      <SectionHead
+        name={section.name}
+        got={got}
+        total={total}
+        completion={sectionCompletion(section, progress)}
+      />
+      <SectionBody section={section} progress={progress} onSet={onSet} />
+    </section>
+  );
+}
+
+function SectionHead({
+  name,
+  got,
+  total,
+  completion,
+}: {
+  name: string;
+  got: number;
+  total: number;
+  completion: number;
+}) {
+  return (
+    <div className={styles.sectionHead}>
+      <h2 className={styles.sectionName}>{name}</h2>
+      <span className={styles.sectionCount}>
+        {got}/{total}
+      </span>
+      <span
+        className={`${styles.sectionPct} ${completion >= 1 ? styles.sectionPctDone : ""}`}
+      >
+        {formatPercent(completion)}%
+      </span>
+    </div>
+  );
+}
+
+// ─── Seção com abas ("Figurines › Hall A", "Figurines › Hall B"…) ────────────
+// Um cabeçalho com o total do grupo e uma aba por subseção; só a aba aberta
+// aparece, para os itens das outras não ocuparem a página.
+function TabbedSection({
+  block,
+  progress,
+  onSet,
+}: {
+  block: Extract<SectionBlock, { kind: "tabs" }>;
+  progress: Progress;
+  onSet: OnSet;
+}) {
+  const [active, setActive] = useState(0);
+  const sections = block.parts.map((t) => t.section);
+  const totals = sections.map((s) => sectionTotals(s, progress));
+  const current = block.parts[Math.min(active, block.parts.length - 1)];
+
+  return (
+    <section className={styles.section}>
+      <SectionHead
+        name={block.title}
+        got={totals.reduce((n, t) => n + t.got, 0)}
+        total={totals.reduce((n, t) => n + t.total, 0)}
+        completion={sectionsCompletion(sections, progress)}
+      />
+
+      {/* Celular: lista suspensa (uma linha só); desktop: pílulas */}
+      <select
+        className={styles.tabSelect}
+        value={block.parts.indexOf(current)}
+        onChange={(e) => setActive(Number(e.target.value))}
+        aria-label={`${block.title}: escolher parte`}
+      >
+        {block.parts.map((tab, i) => (
+          <option key={tab.section.id} value={i}>
+            {tab.label} · {formatPercent(sectionCompletion(tab.section, progress))}%
+          </option>
+        ))}
+      </select>
+
+      <div className={styles.tabs} role="tablist" aria-label={block.title}>
+        {block.parts.map((tab, i) => {
+          const c = sectionCompletion(tab.section, progress);
+          const selected = tab === current;
+          return (
+            <button
+              key={tab.section.id}
+              type="button"
+              role="tab"
+              id={`tab-${tab.section.id}`}
+              aria-selected={selected}
+              aria-controls={`panel-${tab.section.id}`}
+              className={`${styles.tab} ${selected ? styles.tabActive : ""}`}
+              onClick={() => setActive(i)}
+            >
+              {tab.label}
+              <span className={`${styles.tabPct} ${c >= 1 ? styles.sectionPctDone : ""}`}>
+                {formatPercent(c)}%
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {section.layout === "matrix" ? (
-        <Matrix section={section} progress={progress} onSet={onSet} />
-      ) : section.layout === "list" ? (
-        <ul className={styles.list}>
-          {section.items.map((item) => (
-            <li key={item.id}>
-              <ListRow item={item} progress={progress} onSet={onSet} />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <ul className={styles.grid}>
-          {section.items.map((item) => (
-            <li key={item.id}>
-              <Tile item={item} progress={progress} onSet={onSet} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <div
+        role="tabpanel"
+        id={`panel-${current.section.id}`}
+        aria-labelledby={`tab-${current.section.id}`}
+      >
+        <SectionBody section={current.section} progress={progress} onSet={onSet} />
+      </div>
     </section>
+  );
+}
+
+// ─── Grades sobrepostas ("Mapping + Charted Map", "Mapping + Salvaged …") ──
+// Uma grade só; cada célula tem um check por camada. Cada camada tem cor e
+// formato próprios (não só cor), explicados na legenda.
+const LAYER_STYLES = [
+  { color: "var(--accent)", shape: "square" },
+  { color: "var(--yellow)", shape: "circle" },
+  { color: "var(--sky)", shape: "diamond" },
+  { color: "var(--pink)", shape: "square" },
+] as const;
+
+function layerStyle(i: number) {
+  return LAYER_STYLES[i % LAYER_STYLES.length];
+}
+
+function OverlaySection({
+  block,
+  progress,
+  onSet,
+}: {
+  block: Extract<SectionBlock, { kind: "overlay" }>;
+  progress: Progress;
+  onSet: OnSet;
+}) {
+  const sections = block.parts.map((p) => p.section);
+  const totals = sections.map((s) => sectionTotals(s, progress));
+  const { columns, rows } = toOverlayMatrix(block.parts);
+
+  return (
+    <section className={styles.section}>
+      <SectionHead
+        name={block.title}
+        got={totals.reduce((n, t) => n + t.got, 0)}
+        total={totals.reduce((n, t) => n + t.total, 0)}
+        completion={sectionsCompletion(sections, progress)}
+      />
+
+      <ul className={styles.legend}>
+        {block.parts.map((part, i) => {
+          const c = sectionCompletion(part.section, progress);
+          return (
+            <li key={part.section.id} className={styles.legendItem}>
+              <LayerMark index={i} on />
+              {part.label}
+              <span className={`${styles.tabPct} ${c >= 1 ? styles.sectionPctDone : ""}`}>
+                {totals[i].got}/{totals[i].total}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className={styles.matrixWrap}>
+        <table className={styles.matrix}>
+          <thead>
+            <tr>
+              <th />
+              {columns.map((col) => (
+                <th key={col.label} className={styles.matrixCol}>
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.group}>
+                <th scope="row" className={styles.matrixRow}>
+                  {row.group}
+                </th>
+                {row.cells.map((layers, ci) => (
+                  <td key={columns[ci].label}>
+                    <span className={styles.layerCell}>
+                      {layers.map((item, li) => {
+                        if (!item) {
+                          return <span key={li} className={styles.layerNa} aria-hidden />;
+                        }
+                        const on = valueOf(progress, item) > 0;
+                        const label = `${columns[ci].label}${row.group} — ${block.parts[li].label}`;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={styles.layerBtn}
+                            onClick={() => onSet(item, on ? 0 : 1)}
+                            aria-pressed={on}
+                            aria-label={label}
+                            title={label}
+                          >
+                            <LayerMark index={li} on={on} />
+                          </button>
+                        );
+                      })}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+/** Marcador de uma camada: cheio quando marcado, só o contorno quando não. */
+function LayerMark({ index, on }: { index: number; on: boolean }) {
+  const { color, shape } = layerStyle(index);
+  return (
+    <span
+      className={`${styles.layerMark} ${styles[shape]} ${on ? styles.layerOn : ""}`}
+      style={{ "--layer": color } as CSSProperties}
+    />
+  );
+}
+
+// ─── Itens de uma seção, no layout dela ──────────────────────────────────────
+function SectionBody({
+  section,
+  progress,
+  onSet,
+}: {
+  section: ChecklistSection;
+  progress: Progress;
+  onSet: OnSet;
+}) {
+  if (section.layout === "matrix") {
+    return <Matrix section={section} progress={progress} onSet={onSet} />;
+  }
+  if (section.layout === "list") {
+    return (
+      <ul className={styles.list}>
+        {section.items.map((item) => (
+          <li key={item.id}>
+            <ListRow item={item} progress={progress} onSet={onSet} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return (
+    <ul className={styles.grid}>
+      {section.items.map((item) => (
+        <li key={item.id}>
+          <Tile item={item} progress={progress} onSet={onSet} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
 type ItemProps = {
   item: ChecklistItem;
   progress: Progress;
-  onSet: (item: ChecklistItem, value: number) => void;
+  onSet: OnSet;
 };
 
 // ─── Grid: ícone que acende ──────────────────────────────────────────────────

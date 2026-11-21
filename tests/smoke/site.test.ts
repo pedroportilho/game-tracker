@@ -3,10 +3,12 @@
 //   npm run test:smoke
 //
 // Sem credenciais, testa o que dá para ver sem login. Com SMOKE_EMAIL e
-// SMOKE_PASSWORD no ambiente, também entra na conta e abre as páginas
-// logadas (só leitura: nada é gravado) e sai no fim.
+// SMOKE_PASSWORD (de um USUÁRIO DE TESTE), também entra na conta, abre as
+// páginas logadas (só leitura: nada é gravado) e sai no fim. Coloque-os em
+// .env.test.local (ignorado pelo git):
 //
-//   $env:SMOKE_EMAIL="..."; $env:SMOKE_PASSWORD="..."; npm run test:smoke
+//   SMOKE_EMAIL=teste@exemplo.com
+//   SMOKE_PASSWORD=...
 //
 // Não sobe servidor: dois `next dev` na mesma pasta .next quebram o site.
 
@@ -23,6 +25,7 @@ const PAGES = [
   "/backlog",
   "/checklists",
   "/checklists/zelda-oot",
+  "/checklists/zelda-ww", // seções com abas (Figurines) e mapa sobreposto
   "/settings",
 ];
 

@@ -284,6 +284,86 @@
 .sectionPctDone {
   color: var(--mint);
 }
+
+/* Abas de uma seção agrupada ("Figurines › Hall A"…). Pílulas que quebram
+   linha: todas ficam sempre visíveis (sem rolagem lateral escondida) */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: -0.25rem;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  color: var(--muted);
+  border: 1px solid var(--line-strong);
+  border-radius: 9999px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
+.tabActive,
+.tabActive:hover {
+  font-weight: 600;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: var(--accent);
+}
+
+/* Celular: as pílulas viram uma lista suspensa (ocupa uma linha só) */
+.tabSelect {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .tabs {
+    display: none;
+  }
+
+  .tabSelect {
+    display: block;
+    width: 100%;
+    padding: 0.55rem 2rem 0.55rem 0.8rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ink);
+    background:
+      linear-gradient(45deg, transparent 50%, var(--muted) 50%) right 1rem center / 5px 5px no-repeat,
+      linear-gradient(-45deg, transparent 50%, var(--muted) 50%) right calc(1rem - 5px) center / 5px 5px no-repeat,
+      color-mix(in srgb, var(--accent) 12%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: 0.6rem;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .tabSelect option {
+    color: var(--ink);
+    background: var(--surface);
+  }
+}
+
+.tabPct {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
  
 /* grid ─ ícones lado a lado */
 .grid {
@@ -389,29 +469,45 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.25rem;
   max-width: 5.5rem;
 }
- 
+
+/* Cada círculo é um alvo de toque de 22px encostado no vizinho; o círculo
+   visível (9px) é o ::before. Antes o botão era só o círculo de 9px com vão
+   entre eles: um toque no vão fazia o navegador do celular escolher o
+   vizinho (mirava no nível 1 e marcava o 2). */
 .pip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.pip::before {
+  content: "";
   width: 0.55rem;
   height: 0.55rem;
-  padding: 0;
-  border: 0;
   border-radius: 9999px;
   background: color-mix(in srgb, var(--ink) 14%, transparent);
-  cursor: pointer;
   transition: background 0.15s, transform 0.15s;
 }
- 
-.pip:hover {
+
+.pip:hover::before {
   transform: scale(1.3);
 }
- 
-.pipOn {
+
+.pip:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: -2px;
+}
+
+.pipOn::before {
   background: var(--accent);
 }
- 
+
 .stepper {
   display: inline-flex;
   align-items: center;
@@ -613,3 +709,89 @@
   color: var(--line-strong);
 }
  
+/* ── Grades sobrepostas ("Mapping + …"): legenda e um check por camada ── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: -0.25rem;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.layerCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.layerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.layerBtn:hover {
+  background: var(--hover);
+}
+
+.layerBtn:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 1px;
+}
+
+/* Espaço vazio quando a célula não existe nessa camada (mantém o alinhamento) */
+.layerNa {
+  display: inline-block;
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* --layer vem do componente (cor de cada camada) */
+.layerMark {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1.5px solid color-mix(in srgb, var(--layer) 55%, transparent);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.layerBtn:hover .layerMark {
+  transform: scale(1.2);
+}
+
+.layerOn {
+  background: var(--layer);
+  border-color: var(--layer);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--layer) 45%, transparent);
+}
+
+.square {
+  border-radius: 2px;
+}
+
+.circle {
+  border-radius: 9999px;
+}
+
+.diamond {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
+.layerBtn:hover .diamond {
+  transform: rotate(45deg) scale(1.2);
+}
